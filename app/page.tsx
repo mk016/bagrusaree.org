@@ -10,6 +10,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
+import { FloatingWhatsApp } from '@/components/ui/floating-whatsapp';
 import { MOCK_PRODUCTS, CATEGORIES } from '@/lib/constants';
 import { CategoryProductGroup } from '@/lib/types';
 
@@ -36,7 +37,8 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  const featuredProducts = MOCK_PRODUCTS.filter(product => product.featured);
+  // Get trending products (first 4 featured products)
+  const trendingProducts = MOCK_PRODUCTS.filter(product => product.featured).slice(0, 4);
   const featuredCategories = CATEGORIES.filter(cat => cat.featured);
 
   const productsByCategory: CategoryProductGroup[] = CATEGORIES.reduce((acc: CategoryProductGroup[], category) => {
@@ -56,6 +58,7 @@ export default function Home() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <CartSidebar />
+      <FloatingWhatsApp />
 
       {/* Hero Section */}
       <section className="relative h-[400px] sm:h-[500px] md:h-[600px] overflow-hidden flex items-center">
@@ -180,16 +183,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Products */}
+      {/* Trending Products */}
       <section className="py-10 sm:py-14 md:py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-0">
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
-                Featured Products
+                Trending Products
               </h2>
               <p className="text-gray-600 text-sm sm:text-base">
-                Handpicked collection of our bestselling items
+                Discover what's popular right now
               </p>
             </div>
             <Button variant="outline" asChild className="bg-white w-full sm:w-auto">
@@ -201,7 +204,7 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {featuredProducts.map((product) => (
+            {trendingProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

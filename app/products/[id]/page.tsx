@@ -13,6 +13,8 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
+import { BuyNowButton } from '@/components/products/buy-now-button';
+import { FloatingWhatsApp } from '@/components/ui/floating-whatsapp';
 import { useCartStore, useWishlistStore } from '@/lib/store';
 import { getAllProducts } from '@/lib/data';
 import { cn } from '@/lib/utils';
@@ -100,19 +102,6 @@ export default function ProductDetailPage() {
     });
   };
 
-  const handleBuyNow = () => {
-    // Add to cart first
-    addToCart({
-      productId: product.id,
-      product,
-      quantity,
-      size: selectedSize,
-      color: selectedColor,
-    });
-    // Then redirect to checkout
-    router.push('/checkout');
-  };
-
   const handleWishlistToggle = () => {
     if (isWishlisted) {
       removeFromWishlist(product.id);
@@ -129,6 +118,7 @@ export default function ProductDetailPage() {
     <div className="min-h-screen bg-white">
       <Header />
       <CartSidebar />
+      <FloatingWhatsApp />
 
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
@@ -335,15 +325,14 @@ export default function ProductDetailPage() {
                 {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
               </Button>
               
-              <Button 
-                variant="outline" 
-                className="w-full bg-white" 
-                size="lg"
-                onClick={handleBuyNow}
+              <BuyNowButton
+                product={product}
+                quantity={quantity}
+                size={selectedSize}
+                color={selectedColor}
+                className="w-full bg-white border border-gray-300 text-gray-900 hover:bg-gray-50"
                 disabled={product.stock === 0}
-              >
-                Buy Now
-              </Button>
+              />
               
               {product.stock > 0 && product.stock < 10 && (
                 <p className="text-sm text-orange-600">

@@ -15,7 +15,9 @@ import {
   Truck,
   MessageSquare,
   Menu,
-  X
+  X,
+  Image,
+  TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -26,6 +28,8 @@ const navigation = [
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Customers', href: '/admin/customers', icon: Users },
   { name: 'Categories', href: '/admin/categories', icon: Tag },
+  { name: 'Banners', href: '/admin/banners', icon: Image },
+  { name: 'Trending Products', href: '/admin/trending', icon: TrendingUp },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { name: 'Shipping', href: '/admin/shipping', icon: Truck },
   { name: 'Reviews', href: '/admin/reviews', icon: MessageSquare },
