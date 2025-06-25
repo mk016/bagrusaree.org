@@ -36,7 +36,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
-import { useAuthStore } from '@/lib/store';
 
 const salesData = [
   { month: 'Jan', sales: 65000, orders: 120 },
@@ -73,18 +72,7 @@ const topProducts = [
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
   const [selectedPeriod, setSelectedPeriod] = useState('7d');
-
-  // useEffect(() => {
-  //   if (!isAuthenticated || user?.role !== 'admin') {
-  //     router.push('/auth/login');
-  //   }
-  // }, [isAuthenticated, user, router]);
-
-  // if (!isAuthenticated || user?.role !== 'admin') {
-  //   return null;
-  // }
 
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -11,29 +11,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
-import { useAuthStore } from '@/lib/store';
 import { CATEGORIES } from '@/lib/constants';
 import { getAllProducts } from '@/lib/data';
 
 export default function AdminProductsPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
 
   const allProducts = getAllProducts();
   const [products, setProducts] = useState(allProducts);
-
-  useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'admin') {
-      router.push('/auth/login');
-    }
-  }, [isAuthenticated, user, router]);
-
-  if (!isAuthenticated || user?.role !== 'admin') {
-    return null;
-  }
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value === 'all-categories' ? '' : value);
