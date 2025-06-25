@@ -182,7 +182,7 @@ export const MOCK_PRODUCTS = [
     description: 'Comfortable and elegant cotton saree for daily wear',
     price: 1299,
     comparePrice: 1899,
-    images: ['/assets/sarees/saree2.jpeg'],
+    images: ['/assets/sarees/saree1.jpeg'],
     category: 'sarees',
     subcategory: 'cotton-sarees',
     tags: ['cotton', 'casual', 'comfort'],
