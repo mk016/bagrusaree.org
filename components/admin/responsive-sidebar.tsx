@@ -169,17 +169,17 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+        "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
             <Link href="/admin" className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-indigo-600 rounded-full flex items-center justify-center">
+              <div className="h-8 w-8 bg-indigo-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">A</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">Admin Panel</span>
+              <span className="text-lg font-bold text-gray-900">Admin Panel</span>
             </Link>
             <Button
               variant="ghost"
@@ -192,20 +192,20 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
           </div>
 
           {/* Search */}
-          <div className="px-4 py-3 border-b border-gray-200">
+          <div className="px-3 py-3 border-b border-gray-200">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search menu..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-gray-50 border-gray-200"
+                className="pl-10 bg-gray-50 border-gray-200 text-sm"
               />
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
             {filteredNavigation.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
               const isExpanded = expandedItems.includes(item.name);
@@ -217,7 +217,7 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
                     <Link
                       href={item.href}
                       className={cn(
-                        "flex items-center flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                        "flex items-center flex-1 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
                         isActive
                           ? "bg-indigo-100 text-indigo-700"
                           : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -230,7 +230,7 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
                     >
                       <item.icon
                         className={cn(
-                          "mr-3 h-5 w-5 flex-shrink-0",
+                          "mr-3 h-4 w-4 flex-shrink-0",
                           isActive ? "text-indigo-500" : "text-gray-400"
                         )}
                       />
@@ -238,7 +238,7 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
                       {item.badge && (
                         <Badge 
                           variant={isActive ? "default" : "secondary"} 
-                          className="ml-2 text-xs"
+                          className="ml-2 text-xs h-5 px-1.5"
                         >
                           {item.badge}
                         </Badge>
@@ -263,7 +263,7 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
 
                   {/* Submenu */}
                   {hasChildren && isExpanded && (
-                    <div className="ml-8 mt-1 space-y-1">
+                    <div className="ml-7 mt-1 space-y-1">
                       {item.children.map((child) => {
                         const isChildActive = pathname === child.href;
                         return (
@@ -271,7 +271,7 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
                             key={child.name}
                             href={child.href}
                             className={cn(
-                              "block px-3 py-2 text-sm rounded-md transition-colors",
+                              "block px-3 py-2 text-sm rounded-lg transition-colors",
                               isChildActive
                                 ? "bg-indigo-50 text-indigo-700"
                                 : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -294,7 +294,7 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
           </nav>
 
           {/* User Profile */}
-          <div className="px-4 py-4 border-t border-gray-200">
+          <div className="px-3 py-3 border-t border-gray-200">
             <div className="flex items-center space-x-3 mb-3">
               <Avatar className="h-8 w-8">
                 <AvatarImage src="/api/placeholder/32/32" />
@@ -310,12 +310,12 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
               </div>
             </div>
             <div className="flex space-x-2">
-              <Button variant="outline" size="sm" className="flex-1">
-                <Shield className="h-4 w-4 mr-2" />
+              <Button variant="outline" size="sm" className="flex-1 text-xs">
+                <Shield className="h-3 w-3 mr-1" />
                 Profile
               </Button>
-              <Button variant="outline" size="sm" className="flex-1">
-                <LogOut className="h-4 w-4 mr-2" />
+              <Button variant="outline" size="sm" className="flex-1 text-xs">
+                <LogOut className="h-3 w-3 mr-1" />
                 Logout
               </Button>
             </div>

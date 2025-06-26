@@ -35,7 +35,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AdminSidebar } from '@/components/admin/admin-sidebar';
 
 const salesData = [
   { month: 'Jan', sales: 65000, orders: 120 },
@@ -90,243 +89,235 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        <AdminSidebar />
-        
-        <div className="flex-1 lg:ml-64">
-          {/* Header */}
-          <div className="bg-white border-b border-gray-200">
-            <div className="px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-16">
-                <div>
-                  <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7d">Last 7 days</SelectItem>
-                      <SelectItem value="30d">Last 30 days</SelectItem>
-                      <SelectItem value="3m">Last 3 months</SelectItem>
-                      <SelectItem value="1y">Last year</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button>
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="px-4 sm:px-6 lg:px-8 py-8">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">₹5,45,000</div>
-                  <p className="text-xs text-muted-foreground">
-                    <span className="text-green-600">+12.5%</span> from last month
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">1,055</div>
-                  <p className="text-xs text-muted-foreground">
-                    <span className="text-green-600">+8.2%</span> from last month
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">2,847</div>
-                  <p className="text-xs text-muted-foreground">
-                    <span className="text-green-600">+15.3%</span> from last month
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">3.2%</div>
-                  <p className="text-xs text-muted-foreground">
-                    <span className="text-green-600">+0.5%</span> from last month
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sales Overview</CardTitle>
-                  <CardDescription>Monthly sales and order trends</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={salesData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line 
-                        type="monotone" 
-                        dataKey="sales" 
-                        stroke="#3B82F6" 
-                        strokeWidth={2}
-                        name="Sales (₹)"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sales by Category</CardTitle>
-                  <CardDescription>Distribution of sales across product categories</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={categoryData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={120}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {categoryData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="flex flex-wrap gap-4 mt-4">
-                    {categoryData.map((item, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className="text-sm">{item.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Tables */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Recent Orders</CardTitle>
-                    <CardDescription>Latest customer orders</CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    View All
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Order ID</TableHead>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {recentOrders.map((order) => (
-                        <TableRow key={order.id}>
-                          <TableCell className="font-mono text-sm">{order.id}</TableCell>
-                          <TableCell>{order.customer}</TableCell>
-                          <TableCell>₹{order.amount.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(order.status)}>
-                              {order.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Top Products</CardTitle>
-                    <CardDescription>Best performing products</CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    View All
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Product</TableHead>
-                        <TableHead>Sales</TableHead>
-                        <TableHead>Revenue</TableHead>
-                        <TableHead>Stock</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {topProducts.map((product) => (
-                        <TableRow key={product.id}>
-                          <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell>{product.sales}</TableCell>
-                          <TableCell>₹{product.revenue.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={product.stock < 10 ? "destructive" : "secondary"}
-                            >
-                              {product.stock}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Overview of your store performance</p>
         </div>
+        <div className="flex items-center space-x-4">
+          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="3m">Last 3 months</SelectItem>
+              <SelectItem value="1y">Last year</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₹5,45,000</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-green-600">+12.5%</span> from last month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">1,055</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-green-600">+8.2%</span> from last month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">2,847</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-green-600">+15.3%</span> from last month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">3.2%</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-green-600">+0.5%</span> from last month
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Sales Overview</CardTitle>
+            <CardDescription>Monthly sales and order trends</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={salesData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Line 
+                  type="monotone" 
+                  dataKey="sales" 
+                  stroke="#3B82F6" 
+                  strokeWidth={2}
+                  name="Sales (₹)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Sales by Category</CardTitle>
+            <CardDescription>Distribution of sales across product categories</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={120}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="flex flex-wrap gap-4 mt-4">
+              {categoryData.map((item, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-sm">{item.name}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tables */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Recent Orders</CardTitle>
+              <CardDescription>Latest customer orders</CardDescription>
+            </div>
+            <Button variant="outline" size="sm">
+              View All
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead className="hidden sm:table-cell">Customer</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-mono text-sm">{order.id}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{order.customer}</TableCell>
+                      <TableCell>₹{order.amount.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(order.status)}>
+                          {order.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Top Products</CardTitle>
+              <CardDescription>Best performing products</CardDescription>
+            </div>
+            <Button variant="outline" size="sm">
+              View All
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead className="hidden sm:table-cell">Sales</TableHead>
+                    <TableHead>Revenue</TableHead>
+                    <TableHead className="hidden sm:table-cell">Stock</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {topProducts.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{product.sales}</TableCell>
+                      <TableCell>₹{product.revenue.toLocaleString()}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge 
+                          variant={product.stock < 10 ? "destructive" : "secondary"}
+                        >
+                          {product.stock}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

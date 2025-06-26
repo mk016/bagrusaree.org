@@ -24,7 +24,7 @@ export function AdminHeader({ onMenuToggle, title = "Dashboard" }: AdminHeaderPr
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <header className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4">
+    <header className="bg-white border-b border-gray-200 px-4 lg:px-8 py-4">
       <div className="flex items-center justify-between">
         {/* Left Section */}
         <div className="flex items-center space-x-4">
@@ -38,15 +38,15 @@ export function AdminHeader({ onMenuToggle, title = "Dashboard" }: AdminHeaderPr
           </Button>
           
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">{title}</h1>
+            <p className="text-sm text-gray-500 hidden sm:block">
               Welcome back! Here's what's happening with your store today.
             </p>
           </div>
         </div>
 
         {/* Right Section */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3 lg:space-x-4">
           {/* Search - Hidden on mobile */}
           <div className="hidden md:block relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -54,7 +54,7 @@ export function AdminHeader({ onMenuToggle, title = "Dashboard" }: AdminHeaderPr
               placeholder="Search anything..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-64 bg-gray-50 border-gray-200"
+              className="pl-10 w-48 lg:w-64 bg-gray-50 border-gray-200"
             />
           </div>
 
