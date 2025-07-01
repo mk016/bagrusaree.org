@@ -126,7 +126,7 @@ export default function AdminProductsPage() {
         <AdminSidebar />
         
         {/* Main Content - Responsive without fixed sidebar margin */}
-        <div className="flex-1 w-full lg:pl-64">
+        <div className="flex-1 w-full">
           {/* Header */}
           <div className="bg-white border-b border-gray-200">
             <div className="px-4 sm:px-6 lg:px-8">
