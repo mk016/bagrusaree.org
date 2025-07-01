@@ -2,12 +2,12 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Star, Heart, Share2, ShoppingCart, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Plus, Minus } from 'lucide-react';
+import { Star, Heart, Share2, ShoppingCart, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Plus, Minus, ChevronDown, Globe, AlertCircle, Copy, Check, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -19,6 +19,7 @@ import { useCartStore, useWishlistStore } from '@/lib/store';
 import { getAllProducts } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { Product } from '@/lib/types';
+import { toast } from 'sonner';
 
 const mockReviews = [
   {
@@ -47,24 +48,15 @@ const mockReviews = [
   },
 ];
 
-function Label({ className, children, ...props }: { className?: string; children: React.ReactNode; [key: string]: any }) {
-  return (
-    <label className={cn("text-sm font-medium", className)} {...props}>
-      {children}
-    </label>
-  );
-}
-
 export default function ProductDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   
   const { addItem: addToCart } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
@@ -91,6 +83,17 @@ export default function ProductDetailPage() {
   const relatedProducts = products
     .filter((p: Product) => p.id !== id && p.category === product?.category)
     .slice(0, 4);
+
+  const copyToClipboard = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      toast.success(`Code ${code} copied to clipboard!`);
+      setTimeout(() => setCopiedCode(null), 2000);
+    } catch (err) {
+      toast.error('Failed to copy code');
+    }
+  };
 
   if (loading) {
     return (
@@ -140,8 +143,6 @@ export default function ProductDetailPage() {
       productId: product.id,
       product,
       quantity,
-      size: selectedSize,
-      color: selectedColor,
     });
   };
 
@@ -232,24 +233,14 @@ export default function ProductDetailPage() {
 
           {/* Product Info */}
           <div className="space-y-6">
+            {/* Product Title and Code */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleWishlistToggle}
-                    className="bg-white"
-                  >
-                    <Heart className={cn("h-4 w-4", isWishlisted && "fill-red-500 text-red-500")} />
-                  </Button>
-                  <Button variant="outline" size="sm" className="bg-white">
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+                {product.name}
+                <span className="text-gray-500 font-normal text-lg ml-2">( {product.sku} )</span>
+              </h1>
               
+              {/* Rating */}
               <div className="flex items-center space-x-2 mb-4">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
@@ -257,156 +248,294 @@ export default function ProductDetailPage() {
                       key={i}
                       className={cn(
                         "h-4 w-4",
-                        i < 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                        i < 4 ? "fill-green-500 text-green-500" : "text-gray-300"
                       )}
                     />
                   ))}
                 </div>
-                <span className="text-sm text-gray-600">(24 reviews)</span>
+                <span className="text-sm font-medium text-gray-900">4 reviews</span>
               </div>
 
+              {/* Pricing */}
               <div className="flex items-center space-x-3 mb-4">
-                <span className="text-3xl font-bold text-gray-900">
-                  ₹{product.price.toLocaleString()}
+                {product.comparePrice && (
+                  <span className="text-lg text-gray-500 line-through">
+                    Rs. {product.comparePrice.toLocaleString()}.00
+                  </span>
+                )}
+                <span className="text-2xl font-bold text-gray-900">
+                  Rs. {product.price.toLocaleString()}.00
                 </span>
                 {product.comparePrice && (
-                  <>
-                    <span className="text-xl text-gray-500 line-through">
-                      ₹{product.comparePrice.toLocaleString()}
-                    </span>
-                    <Badge variant="destructive">
-                      {discountPercentage}% OFF
-                    </Badge>
-                  </>
+                  <Badge variant="destructive" className="bg-red-600">
+                    Save {discountPercentage}%
+                  </Badge>
                 )}
               </div>
 
-              {/* Description */}
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Product Details</h2>
-                <div 
-                  className="text-gray-700 leading-relaxed space-y-3"
-                  dangerouslySetInnerHTML={{ __html: product.description }}
-                />
-              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Maximum Retail Price (incl. of all taxes). <span className="font-medium">Shipping Free</span>
+              </p>
             </div>
 
-            {/* Product Options */}
-            <div className="space-y-4">
-              {/* Size Selection */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Size</Label>
-                <Select value={selectedSize} onValueChange={setSelectedSize}>
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="Select size" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="xs">XS</SelectItem>
-                    <SelectItem value="s">S</SelectItem>
-                    <SelectItem value="m">M</SelectItem>
-                    <SelectItem value="l">L</SelectItem>
-                    <SelectItem value="xl">XL</SelectItem>
-                  </SelectContent>
-                </Select>
+            {/* Offers Section */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium text-gray-900">OFFERS FOR YOU</h3>
               </div>
-
-              {/* Color Selection */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Color</Label>
-                <div className="flex space-x-2">
-                  {['Red', 'Blue', 'Green', 'Pink'].map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setSelectedColor(color)}
-                      className={cn(
-                        "w-8 h-8 rounded-full border-2 transition-colors",
-                        selectedColor === color ? "border-gray-900" : "border-gray-300",
-                        color === 'Red' && "bg-red-500",
-                        color === 'Blue' && "bg-blue-500",
-                        color === 'Green' && "bg-green-500",
-                        color === 'Pink' && "bg-pink-500"
-                      )}
-                    />
-                  ))}
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-orange-600">★</span>
+                    <span className="text-sm">Buy any 2 and get Flat 10% off</span>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard('BS10')}
+                    className="flex items-center space-x-1 bg-orange-100 text-orange-700 border border-orange-300 px-2 py-1 rounded text-xs hover:bg-orange-200 transition-colors"
+                  >
+                    <span>BS10</span>
+                    {copiedCode === 'BS10' ? (
+                      <Check className="h-3 w-3" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </button>
                 </div>
-              </div>
-
-              {/* Quantity */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Quantity</Label>
-                <div className="flex items-center space-x-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="bg-white"
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-orange-600">★</span>
+                    <span className="text-sm">Buy any 3 or More Get Flat 15% off</span>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard('BS15')}
+                    className="flex items-center space-x-1 bg-orange-100 text-orange-700 border border-orange-300 px-2 py-1 rounded text-xs hover:bg-orange-200 transition-colors"
                   >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <span className="w-16 text-center">{quantity}</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="bg-white"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                    <span>BS15</span>
+                    {copiedCode === 'BS15' ? (
+                      <Check className="h-3 w-3" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Add to Cart */}
+            {/* Shipping and Stock Info */}
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2 text-sm">
+                <Globe className="h-4 w-4 text-gray-600" />
+                <span>Free Shipping | Delivery With in 3-5 Days</span>
+              </div>
+              
+              {product.stock > 0 && product.stock < 10 && (
+                <div className="flex items-center space-x-2 text-sm text-orange-600">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>Low stock - {product.stock} item left</span>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
             <div className="space-y-3">
               <Button
-                className="w-full"
+                className="w-full bg-white border border-gray-300 text-gray-900 hover:bg-gray-50"
                 size="lg"
                 onClick={handleAddToCart}
                 disabled={product.stock === 0}
               >
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                ADD TO CART
               </Button>
               
-              <BuyNowButton
-                product={product}
-                quantity={quantity}
-                size={selectedSize}
-                color={selectedColor}
-                className="w-full bg-white border border-gray-300 text-gray-900 hover:bg-gray-50"
+              <Button
+                className="w-full bg-black text-white hover:bg-gray-800"
+                size="lg"
+                onClick={() => {
+                  const message = `Hi! I'm interested in ordering this product:
+
+🛍️ *${product.name}*
+📦 Product Code: ${product.sku}
+💰 Price: Rs. ${product.price.toLocaleString()}.00
+📏 Quantity: ${quantity}
+
+Product Details:
+• Saree Length: 5.5 Mtr
+• Saree Width: 44 Inch
+• Saree Fabric: Chanderi Silk
+• With Blouse: Yes (Length: 0.8 Mtr)
+• Blouse Fabric: Chanderi Silk
+• Print: Handblock
+• Wash Care: Hand wash separately
+
+Please confirm availability and proceed with the order. Thank you!`;
+                  
+                  const whatsappUrl = `https://wa.me/917665629448?text=${encodeURIComponent(message)}`;
+                  window.open(whatsappUrl, '_blank');
+                }}
                 disabled={product.stock === 0}
-              />
+              >
+                BUY IT NOW
+              </Button>
               
-              {product.stock > 0 && product.stock < 10 && (
-                <p className="text-sm text-orange-600">
-                  Only {product.stock} left in stock!
-                </p>
-              )}
+              <Button
+                className="w-full bg-green-600 text-white hover:bg-green-700 flex items-center justify-center gap-2"
+                size="lg"
+                onClick={() => {
+                  const message = `Hi! I'm interested in ordering this product:
+
+🛍️ *${product.name}*
+📦 Product Code: ${product.sku}
+💰 Price: Rs. ${product.price.toLocaleString()}.00
+📏 Quantity: ${quantity}
+
+Product Details:
+• Saree Length: 5.5 Mtr
+• Saree Width: 44 Inch
+• Saree Fabric: Chanderi Silk
+• With Blouse: Yes (Length: 0.8 Mtr)
+• Blouse Fabric: Chanderi Silk
+• Print: Handblock
+• Wash Care: Hand wash separately
+
+Please confirm availability and proceed with the order. Thank you!`;
+                  
+                  const whatsappUrl = `https://wa.me/917665629448?text=${encodeURIComponent(message)}`;
+                  window.open(whatsappUrl, '_blank');
+                }}
+                disabled={product.stock === 0}
+              >
+                <MessageCircle className="h-5 w-5" />
+                ORDER VIA WHATSAPP
+              </Button>
             </div>
 
-            {/* Features */}
-            <div className="space-y-3 pt-6 border-t">
-              <div className="flex items-center space-x-3 text-sm">
-                <Truck className="h-5 w-5 text-indigo-600" />
-                <span>Free shipping on orders over ₹999</span>
+            {/* Product Specifications Grid */}
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="space-y-3">
+                <div>
+                  <div className="font-medium text-gray-900 mb-1">Saree</div>
+                  <div className="text-gray-600">Length : 5.5 Mtr</div>
+                  <div className="text-gray-600">Width : 44 Inch</div>
+                </div>
+                
+                <div>
+                  <div className="font-medium text-gray-900 mb-1">Wash Care</div>
+                  <div className="text-gray-600">Hand wash</div>
+                  <div className="text-gray-600">separately</div>
+                </div>
               </div>
-              <div className="flex items-center space-x-3 text-sm">
-                <RotateCcw className="h-5 w-5 text-indigo-600" />
-                <span>7-day easy returns</span>
+              
+              <div className="space-y-3">
+                <div>
+                  <div className="font-medium text-gray-900 mb-1">Saree Fabric</div>
+                  <div className="text-gray-600">Chanderi Silk</div>
+                </div>
+                
+                <div>
+                  <div className="font-medium text-gray-900 mb-1">With Blouse</div>
+                  <div className="text-gray-600">Yes</div>
+                  <div className="text-gray-600">Lenght: 0.8 Mtr</div>
+                </div>
               </div>
-              <div className="flex items-center space-x-3 text-sm">
-                <Shield className="h-5 w-5 text-indigo-600" />
-                <span>100% authentic products</span>
+              
+              <div className="space-y-3">
+                <div>
+                  <div className="font-medium text-gray-900 mb-1">Print</div>
+                  <div className="text-gray-600">Handblock</div>
+                </div>
+                
+                <div>
+                  <div className="font-medium text-gray-900 mb-1">Shipping</div>
+                  <div className="text-gray-600">Free Worldwide</div>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <div className="font-medium text-gray-900 mb-1">Blouse Fabric</div>
+                  <div className="text-gray-600">Chanderi Silk</div>
+                </div>
+                
+                <div>
+                  <div className="font-medium text-gray-900 mb-1">COD</div>
+                  <div className="text-gray-600">Available in India</div>
+                </div>
               </div>
             </div>
 
-            {/* Product Tags */}
-            <div className="flex flex-wrap gap-2">
-              {product.tags.map((tag) => (
-                <Badge key={tag} variant="outline" className="bg-white">
-                  {tag}
-                </Badge>
-              ))}
+            {/* Collapsible Sections */}
+            <div className="space-y-4 border-t pt-6">
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center justify-between w-full py-3 text-left font-medium">
+                  ABOUT BAGRUART
+                  <ChevronDown className="h-4 w-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2 text-sm text-gray-600 space-y-2">
+                  <p>The renowned chain of ethnic wear in Rajasthan, Bagru Art brings you timeless tradition through beautifully traditional printed collections. With over 200,000 happy customers and 10 years of excellence, we are proud to be a trusted name in authentic handcrafted fashion. Explore a world where heritage meets style.</p>
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center justify-between w-full py-3 text-left font-medium">
+                  BAGRU SAREES JAIPUR STORE
+                  <ChevronDown className="h-4 w-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2 text-sm text-gray-600 space-y-2">
+                  <p><strong>Visit Us:</strong> Open on all Days 11 AM to 5 PM</p>
+                  <p><strong>Address:</strong></p>
+                  <p><strong>Store Manager No:</strong> +91 76656 29448</p>
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center justify-between w-full py-3 text-left font-medium">
+                  SHIPPING DETAILS
+                  <ChevronDown className="h-4 w-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2 text-sm text-gray-600 space-y-2">
+                  <p>• Free shipping within India 5-7 working days.</p>
+                  <p>• Cancellation requests will be accepted strictly within 24 hours of placing the Order.</p>
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center justify-between w-full py-3 text-left font-medium">
+                  CARE INSTRUCTION
+                  <ChevronDown className="h-4 w-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2 text-sm text-gray-600 space-y-2">
+                  <p>• These products may have a 5–10% color variation due to lighting during photography.</p>
+                  <p>• Colors may appear brighter in images because of lighting effects.</p>
+                  <p>• Traditional print suits are naturally dull and may have slight inconsistencies in design.</p>
+                  <p>• <strong>Wash Care:</strong> Dry clean or Hand wash separately recommended.</p>
+                  <p>• <strong>Ready Stock:</strong> Product will be dispatch within 24 Hours.</p>
+                  <p>• <strong>Fabric length:</strong> Approximately as mentioned in product description.</p>
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center justify-between w-full py-3 text-left font-medium">
+                  NEED HELP ?
+                  <ChevronDown className="h-4 w-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2 text-sm text-gray-600 space-y-2">
+                  <p><strong>Email:</strong> support@bagrusarees</p>
+                  <p><strong>Call / WhatsApp No.:</strong> +91 76656 29448</p>
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center justify-between w-full py-3 text-left font-medium">
+                  MANUFACTURING INFO
+                  <ChevronDown className="h-4 w-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2 text-sm text-gray-600 space-y-2">
+                  <p><strong>Manufactured & Marketed By:</strong> Bagru Jaipur, PINCODE 303007- Support@bagrusarees.org</p>
+                  <p><strong>Country Of Origin:</strong> India</p>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </div>
         </div>
@@ -415,7 +544,7 @@ export default function ProductDetailPage() {
         <Tabs defaultValue="details" className="mb-12">
           <TabsList className="grid w-full grid-cols-3 bg-white">
             <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="reviews">Reviews (24)</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews (4)</TabsTrigger>
             <TabsTrigger value="shipping">Shipping & Returns</TabsTrigger>
           </TabsList>
           
@@ -440,16 +569,16 @@ export default function ProductDetailPage() {
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-gray-600">Material:</dt>
-                        <dd>Premium Cotton Blend</dd>
+                        <dd>Chanderi Silk</dd>
                       </div>
                     </dl>
                   </div>
                   <div>
                     <h3 className="font-semibold mb-3">Care Instructions</h3>
                     <ul className="space-y-1 text-sm text-gray-600">
-                      <li>• Machine wash cold with similar colors</li>
+                      <li>• Hand wash separately in cold water</li>
                       <li>• Do not bleach</li>
-                      <li>• Tumble dry low</li>
+                      <li>• Dry in shade</li>
                       <li>• Iron on low heat if needed</li>
                       <li>• Dry clean for best results</li>
                     </ul>
@@ -519,10 +648,10 @@ export default function ProductDetailPage() {
                   <div>
                     <h3 className="font-semibold mb-3">Shipping Information</h3>
                     <ul className="space-y-2 text-sm text-gray-600">
-                      <li>• Free shipping on orders over ₹999</li>
+                      <li>• Free shipping worldwide</li>
                       <li>• Standard delivery: 3-5 business days</li>
                       <li>• Express delivery: 1-2 business days</li>
-                      <li>• Cash on delivery available</li>
+                      <li>• Cash on delivery available in India</li>
                       <li>• Order tracking available</li>
                     </ul>
                   </div>

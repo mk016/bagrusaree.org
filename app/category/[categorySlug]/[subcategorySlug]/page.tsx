@@ -9,102 +9,11 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
-import { CATEGORIES, MOCK_PRODUCTS } from '@/lib/constants';
+import { API_ENDPOINTS } from '@/lib/constants';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { Product, ProductCategoryType } from '@/lib/types';
-
-// Define ProductSubcategoryType as string since it's not defined in types.ts
-type ProductSubcategoryType = string;
-
-const allProducts = [
-  ...MOCK_PRODUCTS,
-  {
-    id: '4',
-    name: 'Cotton Palazzo Suit',
-    description: 'Comfortable cotton palazzo suit perfect for daily wear',
-    price: 1599,
-    comparePrice: 2199,
-    images: ['https://images.pexels.com/photos/3735747/pexels-photo-3735747.jpeg'],
-    category: 'suit-sets',
-    subcategory: 'palazzo-suits',
-    tags: ['cotton', 'casual', 'comfortable'],
-    stock: 20,
-    sku: 'PS001',
-    featured: false,
-    status: 'active' as const,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '5',
-    name: 'Banarasi Silk Saree',
-    description: 'Authentic Banarasi silk saree with gold zari work',
-    price: 4999,
-    comparePrice: 7999,
-    images: ['https://images.pexels.com/photos/3621104/pexels-photo-3621104.jpeg'],
-    category: 'sarees',
-    subcategory: 'silk-sarees',
-    tags: ['silk', 'traditional', 'banarasi'],
-    stock: 5,
-    sku: 'BS001',
-    featured: true,
-    status: 'active' as const,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '6',
-    name: 'Georgette Sharara Set',
-    description: 'Elegant georgette sharara set with heavy embroidery',
-    price: 3799,
-    comparePrice: 5499,
-    images: ['https://images.pexels.com/photos/1762851/pexels-photo-1762851.jpeg'],
-    category: 'suit-sets',
-    subcategory: 'sharara-suits',
-    tags: ['georgette', 'party-wear', 'embroidery'],
-    stock: 12,
-    sku: 'GS001',
-    featured: false,
-    status: 'active' as const,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '7',
-    name: 'Premium Cotton Fabric',
-    description: 'High-quality cotton fabric perfect for dress making',
-    price: 299,
-    comparePrice: 399,
-    images: ['https://images.pexels.com/photos/994517/pexels-photo-994517.jpeg'],
-    category: 'fabrics',
-    subcategory: 'cotton-fabrics',
-    tags: ['cotton', 'fabric', 'dress-material'],
-    stock: 50,
-    sku: 'CF001',
-    featured: false,
-    status: 'active' as const,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '8',
-    name: 'Soft Cotton Blend Fabric',
-    description: 'Comfortable cotton blend fabric for casual wear',
-    price: 249,
-    comparePrice: 349,
-    images: ['https://images.pexels.com/photos/994517/pexels-photo-994517.jpeg'],
-    category: 'fabrics',
-    subcategory: 'cotton-fabrics',
-    tags: ['cotton', 'blend', 'casual'],
-    stock: 35,
-    sku: 'CF002',
-    featured: false,
-    status: 'active' as const,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+import { Product, Category, Subcategory } from '@/lib/types';
+import { getAllProducts } from '@/lib/data';
 
 export default function SubcategoryPage() {
   const params = useParams();
@@ -114,42 +23,46 @@ export default function SubcategoryPage() {
   const [sortBy, setSortBy] = useState('newest');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch categories
+        const categoriesResponse = await fetch(API_ENDPOINTS.CATEGORIES);
+        if (categoriesResponse.ok) {
+          const categoriesData = await categoriesResponse.json();
+          setCategories(categoriesData);
+        }
+        
+        // Fetch products
+        const fetchedProducts = await getAllProducts();
+        setProducts(fetchedProducts);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
 
   const category = useMemo(() => 
-    CATEGORIES.find(cat => cat.slug === categorySlug), 
-    [categorySlug]
+    categories.find(cat => cat.slug === categorySlug), 
+    [categories, categorySlug]
   );
   
   const subcategory = useMemo(() => 
-    category?.subcategories.find(sub => sub.slug === subcategorySlug), 
+    category?.subcategories?.find(sub => sub.slug === subcategorySlug), 
     [category, subcategorySlug]
   );
 
-  useEffect(() => {
-    if (categorySlug && subcategorySlug) {
-      setIsLoading(false);
-    }
-  }, [categorySlug, subcategorySlug]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!category || !subcategory) {
-    notFound();
-  }
-
   const subcategoryProducts = useMemo(() => {
-    if (!categorySlug || !subcategorySlug) return [];
+    if (!categorySlug || !subcategorySlug || !products.length) return [];
 
-    let filtered = allProducts.filter(product => 
+    let filtered = products.filter(product => 
       product.category === categorySlug && product.subcategory === subcategorySlug
     );
 
@@ -166,12 +79,31 @@ export default function SubcategoryPage() {
         break;
       case 'newest':
       default:
-        filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        filtered.sort((a, b) => {
+          const aDate = a.createdAt ? (typeof a.createdAt === 'string' ? new Date(a.createdAt) : a.createdAt) : new Date(0);
+          const bDate = b.createdAt ? (typeof b.createdAt === 'string' ? new Date(b.createdAt) : b.createdAt) : new Date(0);
+          return bDate.getTime() - aDate.getTime();
+        });
         break;
     }
 
     return filtered;
-  }, [categorySlug, subcategorySlug, sortBy]);
+  }, [categorySlug, subcategorySlug, sortBy, products]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!category || !subcategory) {
+    notFound();
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -273,7 +205,7 @@ export default function SubcategoryPage() {
             {subcategoryProducts.map(product => (
               <ProductCard 
                 key={product.id} 
-                product={product as unknown as Product}
+                product={product}
                 className={viewMode === 'list' ? 'flex flex-row' : ''}
               />
             ))}

@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import EnhancedImageUpload from '@/components/admin/enhanced-image-upload';
 
 interface BannerEditorProps {
   banner?: any;
@@ -30,31 +31,30 @@ export function BannerEditor({ banner, isEditing = false, onSave, onCancel }: Ba
     textPosition: banner?.textPosition || 'center',
     textColor: banner?.textColor || '#ffffff',
     overlayOpacity: banner?.overlayOpacity || 0.3,
+    desktopImage: banner?.desktopImage || '',
+    desktopImageId: banner?.desktopImageId || '',
+    desktopImageName: banner?.desktopImageName || '',
+    mobileImage: banner?.mobileImage || '',
+    mobileImageId: banner?.mobileImageId || '',
+    mobileImageName: banner?.mobileImageName || '',
   });
 
-  const [desktopImage, setDesktopImage] = useState(banner?.desktopImage || '');
-  const [mobileImage, setMobileImage] = useState(banner?.mobileImage || '');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleImageUpload = (type: 'desktop' | 'mobile') => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          if (type === 'desktop') {
-            setDesktopImage(e.target.result as string);
-          } else {
-            setMobileImage(e.target.result as string);
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleDesktopImageUpload = (imageUrl: string, fileId: string, fileName: string) => {
+    handleInputChange('desktopImage', imageUrl);
+    handleInputChange('desktopImageId', fileId);
+    handleInputChange('desktopImageName', fileName);
+  };
+
+  const handleMobileImageUpload = (imageUrl: string, fileId: string, fileName: string) => {
+    handleInputChange('mobileImage', imageUrl);
+    handleInputChange('mobileImageId', fileId);
+    handleInputChange('mobileImageName', fileName);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,14 +62,8 @@ export function BannerEditor({ banner, isEditing = false, onSave, onCancel }: Ba
     setIsLoading(true);
 
     try {
-      const bannerData = {
-        ...formData,
-        desktopImage,
-        mobileImage,
-      };
-
       await new Promise(resolve => setTimeout(resolve, 1000));
-      onSave?.(bannerData);
+      onSave?.(formData);
     } catch (error) {
       console.error('Error saving banner:', error);
     } finally {
@@ -173,10 +167,10 @@ export function BannerEditor({ banner, isEditing = false, onSave, onCancel }: Ba
                   <div>
                     <Label>Desktop Image</Label>
                     <div className="mt-2">
-                      {desktopImage ? (
+                      {formData.desktopImage ? (
                         <div className="relative">
                           <img
-                            src={desktopImage}
+                            src={formData.desktopImage}
                             alt="Desktop banner"
                             className="w-full h-32 object-cover rounded-lg border"
                           />
@@ -185,22 +179,22 @@ export function BannerEditor({ banner, isEditing = false, onSave, onCancel }: Ba
                             variant="secondary"
                             size="sm"
                             className="absolute top-2 right-2"
-                            onClick={() => setDesktopImage('')}
+                            onClick={() => {
+                              handleInputChange('desktopImage', '');
+                              handleInputChange('desktopImageId', '');
+                              handleInputChange('desktopImageName', '');
+                            }}
                           >
                             Change
                           </Button>
                         </div>
                       ) : (
-                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                          <Upload className="w-8 h-8 mb-2 text-gray-500" />
-                          <p className="text-sm text-gray-500">Upload Desktop Image</p>
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={handleImageUpload('desktop')}
-                          />
-                        </label>
+                        <EnhancedImageUpload
+                          onUploadSuccess={handleDesktopImageUpload}
+                          folder="/banners/desktop"
+                          buttonText="Upload Desktop Image"
+                          maxSizeMB={10}
+                        />
                       )}
                     </div>
                   </div>
@@ -208,10 +202,10 @@ export function BannerEditor({ banner, isEditing = false, onSave, onCancel }: Ba
                   <div>
                     <Label>Mobile Image</Label>
                     <div className="mt-2">
-                      {mobileImage ? (
+                      {formData.mobileImage ? (
                         <div className="relative">
                           <img
-                            src={mobileImage}
+                            src={formData.mobileImage}
                             alt="Mobile banner"
                             className="w-full h-32 object-cover rounded-lg border"
                           />
@@ -220,22 +214,22 @@ export function BannerEditor({ banner, isEditing = false, onSave, onCancel }: Ba
                             variant="secondary"
                             size="sm"
                             className="absolute top-2 right-2"
-                            onClick={() => setMobileImage('')}
+                            onClick={() => {
+                              handleInputChange('mobileImage', '');
+                              handleInputChange('mobileImageId', '');
+                              handleInputChange('mobileImageName', '');
+                            }}
                           >
                             Change
                           </Button>
                         </div>
                       ) : (
-                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                          <Upload className="w-8 h-8 mb-2 text-gray-500" />
-                          <p className="text-sm text-gray-500">Upload Mobile Image</p>
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={handleImageUpload('mobile')}
-                          />
-                        </label>
+                        <EnhancedImageUpload
+                          onUploadSuccess={handleMobileImageUpload}
+                          folder="/banners/mobile"
+                          buttonText="Upload Mobile Image"
+                          maxSizeMB={5}
+                        />
                       )}
                     </div>
                   </div>
@@ -345,9 +339,9 @@ export function BannerEditor({ banner, isEditing = false, onSave, onCancel }: Ba
                 <div>
                   <Label className="text-sm font-medium">Desktop</Label>
                   <div className="relative mt-2 bg-gray-100 rounded-lg overflow-hidden" style={{ aspectRatio: '16/9' }}>
-                    {desktopImage && (
+                    {formData.desktopImage && (
                       <img
-                        src={desktopImage}
+                        src={formData.desktopImage}
                         alt="Desktop preview"
                         className="w-full h-full object-cover"
                       />
@@ -387,9 +381,9 @@ export function BannerEditor({ banner, isEditing = false, onSave, onCancel }: Ba
                 <div>
                   <Label className="text-sm font-medium">Mobile</Label>
                   <div className="relative mt-2 bg-gray-100 rounded-lg overflow-hidden mx-auto" style={{ width: '200px', aspectRatio: '9/16' }}>
-                    {mobileImage && (
+                    {formData.mobileImage && (
                       <img
-                        src={mobileImage}
+                        src={formData.mobileImage}
                         alt="Mobile preview"
                         className="w-full h-full object-cover"
                       />

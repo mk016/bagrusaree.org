@@ -8,6 +8,29 @@ export interface User {
   updatedAt: string;
 }
 
+export interface Banner {
+  id: string;
+  title: string;
+  description: string | null;
+  desktopImage: string;
+  desktopImageId: string;
+  desktopImageName: string;
+  mobileImage: string | null;
+  mobileImageId: string | null;
+  mobileImageName: string | null;
+  link: string | null;
+  textPosition: string;
+  textColor: string;
+  overlayOpacity: number;
+  isActive: boolean;
+  order: number;
+  startDate: string | null;
+  endDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+}
+
 export type ProductCategoryType = 'sarees' | 'suit-sets' | 'dress-material' | 'dupattas' | 'bedsheets' | 'bags' | 'men\'s-collection' | 'home' | 'uncategorized';
 
 export interface Product {

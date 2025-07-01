@@ -1,11 +1,61 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { CATEGORIES } from '@/lib/constants';
+import { API_ENDPOINTS } from '@/lib/constants';
+
+// Default categories to show while loading
+const DEFAULT_CATEGORIES = [
+  {
+    id: '1',
+    name: 'Sarees',
+    slug: 'sarees',
+    subcategories: [
+      { id: '1-1', name: 'Cotton Sarees', slug: 'cotton-sarees' },
+      { id: '1-2', name: 'Silk Sarees', slug: 'silk-sarees' },
+      { id: '1-3', name: 'Printed Sarees', slug: 'printed-sarees' },
+    ],
+  },
+  {
+    id: '2',
+    name: 'Suit Sets',
+    slug: 'suit-sets',
+    subcategories: [
+      { id: '2-1', name: 'Anarkali Suits', slug: 'anarkali-suits' },
+      { id: '2-2', name: 'Palazzo Suits', slug: 'palazzo-suits' },
+    ],
+  },
+  {
+    id: '3',
+    name: 'Dress Material',
+    slug: 'dress-material',
+    subcategories: [
+      { id: '3-1', name: 'Cotton Dress Material', slug: 'cotton-dress-material' },
+      { id: '3-2', name: 'Silk Dress Material', slug: 'silk-dress-material' },
+    ],
+  },
+  {
+    id: '4',
+    name: 'Dupattas',
+    slug: 'dupattas',
+    subcategories: [
+      { id: '4-1', name: 'Cotton Dupattas', slug: 'cotton-dupattas' },
+      { id: '4-2', name: 'Silk Dupattas', slug: 'silk-dupattas' },
+    ],
+  },
+  {
+    id: '5',
+    name: 'Bedsheets',
+    slug: 'bedsheets',
+    subcategories: [
+      { id: '5-1', name: 'Single Bedsheets', slug: 'single-bedsheets' },
+      { id: '5-2', name: 'Double Bedsheets', slug: 'double-bedsheets' },
+    ],
+  },
+];
 
 interface MegaMenuProps {
   isMobile?: boolean;
@@ -14,11 +64,33 @@ interface MegaMenuProps {
 export function MegaMenu({ isMobile = false }: MegaMenuProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.CATEGORIES);
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setCategories(data);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   if (isMobile) {
     return (
       <nav className="space-y-2">
-        {CATEGORIES.map((category) => (
+        {categories.map((category) => (
           <div key={category.id}>
             <div className="flex items-center justify-between">
               <Link
@@ -27,7 +99,7 @@ export function MegaMenu({ isMobile = false }: MegaMenuProps) {
               >
                 {category.name}
               </Link>
-              {category.subcategories.length > 0 && (
+              {category.subcategories && category.subcategories.length > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -46,7 +118,7 @@ export function MegaMenu({ isMobile = false }: MegaMenuProps) {
                 </Button>
               )}
             </div>
-            {expandedMobile === category.id && category.subcategories.length > 0 && (
+            {expandedMobile === category.id && category.subcategories && category.subcategories.length > 0 && (
               <div className="ml-4 space-y-1 mt-2">
                 {category.subcategories.map((subcategory) => (
                   <Link
@@ -68,7 +140,7 @@ export function MegaMenu({ isMobile = false }: MegaMenuProps) {
   return (
     <nav className="relative">
       <div className="flex items-center space-x-8 py-4">
-        {CATEGORIES.map((category) => (
+        {categories.map((category) => (
           <div
             key={category.id}
             className="relative"
@@ -83,13 +155,13 @@ export function MegaMenu({ isMobile = false }: MegaMenuProps) {
               )}
             >
               <span>{category.name}</span>
-              {category.subcategories.length > 0 && (
+              {category.subcategories && category.subcategories.length > 0 && (
                 <ChevronDown className="h-4 w-4" />
               )}
             </Link>
 
             {/* Mega Menu Dropdown */}
-            {activeCategory === category.id && category.subcategories.length > 0 && (
+            {activeCategory === category.id && category.subcategories && category.subcategories.length > 0 && (
               <div className="absolute top-full left-0 z-50 mt-1 w-64 bg-white border rounded-xl shadow-lg">
                 <div className="p-4">
                   <div className="grid grid-cols-1 gap-2">

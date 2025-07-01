@@ -88,6 +88,7 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
         address: `${formData.address1}${formData.address2 ? ', ' + formData.address2 : ''}, ${formData.city}, ${formData.state} - ${formData.zipCode}`
       },
       items: items.map(item => ({
+        productId: item.productId,
         name: item.product.name,
         quantity: item.quantity,
         price: item.product.price,

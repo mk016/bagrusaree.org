@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Save, Upload, X, Plus, Trash2 } from 'lucide-react';
+import { Save, Upload, X, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,9 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CATEGORIES } from '@/lib/constants';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { API_ENDPOINTS } from '@/lib/constants';
 import { addProduct, updateProduct } from '@/lib/product-data';
-import { Product, ProductCategoryType } from '@/lib/types';
+import { Product, ProductCategoryType, Category, Subcategory } from '@/lib/types';
+import { toast } from 'sonner';
 
 interface ProductFormProps {
   product?: Product;
@@ -47,6 +49,47 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
   const [newTag, setNewTag] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  
+  // New category dialog state
+  const [isNewCategoryDialogOpen, setIsNewCategoryDialogOpen] = useState(false);
+  const [newCategory, setNewCategory] = useState({
+    name: '',
+    slug: '',
+    description: '',
+  });
+  
+  // New subcategory dialog state
+  const [isNewSubcategoryDialogOpen, setIsNewSubcategoryDialogOpen] = useState(false);
+  const [newSubcategory, setNewSubcategory] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    categoryId: '',
+  });
+
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoadingCategories(true);
+        const response = await fetch(API_ENDPOINTS.CATEGORIES);
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data);
+        } else {
+          console.error('Failed to fetch categories');
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     if (product && isEditing) {
@@ -110,30 +153,176 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
     handleInputChange('tags', formData.tags.filter(tag => tag !== tagToRemove));
   };
 
+  // Generate slug from name
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-'); // Replace multiple hyphens with single hyphen
+  };
+
+  // Handle new category name change
+  const handleNewCategoryNameChange = (value: string) => {
+    setNewCategory({
+      ...newCategory,
+      name: value,
+      slug: generateSlug(value),
+    });
+  };
+
+  // Handle new subcategory name change
+  const handleNewSubcategoryNameChange = (value: string) => {
+    setNewSubcategory({
+      ...newSubcategory,
+      name: value,
+      slug: generateSlug(value),
+    });
+  };
+
+  // Add new category
+  const handleAddCategory = async () => {
+    if (!newCategory.name || !newCategory.slug) {
+      setError('Category name is required');
+      return;
+    }
+
+    try {
+      const response = await fetch(API_ENDPOINTS.CATEGORIES, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newCategory),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add category');
+      }
+
+      const addedCategory = await response.json();
+      
+      // Update categories list
+      setCategories([...categories, addedCategory]);
+      
+      // Select the newly added category
+      handleInputChange('category', addedCategory.slug as ProductCategoryType);
+      
+      // Reset form and close dialog
+      setNewCategory({ name: '', slug: '', description: '' });
+      setIsNewCategoryDialogOpen(false);
+      
+      toast.success('Category added successfully');
+    } catch (err: any) {
+      console.error('Error adding category:', err);
+      setError(err.message || 'Failed to add category');
+      toast.error('Failed to add category');
+    }
+  };
+
+  // Add new subcategory
+  const handleAddSubcategory = async () => {
+    if (!newSubcategory.name || !newSubcategory.categoryId) {
+      setError('Subcategory name and parent category are required');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_ENDPOINTS.CATEGORIES}/${newSubcategory.categoryId}/subcategories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newSubcategory.name,
+          slug: newSubcategory.slug,
+          description: newSubcategory.description,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add subcategory');
+      }
+
+      const addedSubcategory = await response.json();
+      
+      // Update categories list with new subcategory
+      const updatedCategories = categories.map(category => {
+        if (category.id === newSubcategory.categoryId) {
+          return {
+            ...category,
+            subcategories: [...(category.subcategories || []), addedSubcategory],
+          };
+        }
+        return category;
+      });
+      
+      setCategories(updatedCategories);
+      
+      // Select the newly added subcategory
+      handleInputChange('subcategory', addedSubcategory.slug);
+      
+      // Reset form and close dialog
+      setNewSubcategory({ name: '', slug: '', description: '', categoryId: '' });
+      setIsNewSubcategoryDialogOpen(false);
+      
+      toast.success('Subcategory added successfully');
+    } catch (err: any) {
+      console.error('Error adding subcategory:', err);
+      setError(err.message || 'Failed to add subcategory');
+      toast.error('Failed to add subcategory');
+    }
+  };
+
+  // Refresh categories
+  const refreshCategories = async () => {
+    try {
+      setIsLoadingCategories(true);
+      const response = await fetch(API_ENDPOINTS.CATEGORIES);
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+        toast.success('Categories refreshed');
+      } else {
+        toast.error('Failed to refresh categories');
+      }
+    } catch (err) {
+      console.error('Error refreshing categories:', err);
+      toast.error('Error refreshing categories');
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
+      // Map form data to Product type structure
       const dataToSend = {
         id: formData.id,
         name: formData.name,
         description: formData.description,
-        sellingPrice: parseFloat(formData.price as any) || 0,
-        imagesUrl: images || [],
-        type: formData.category,
+        price: parseFloat(formData.price as any) || 0,
+        images: images || [],
+        category: formData.category,
+        subcategory: formData.subcategory,
         tags: formData.tags,
-        isAvailable: formData.status === 'active',
-        createdBy: 'Admin',
+        stock: formData.stock || 0,
+        featured: formData.featured || false,
+        status: formData.status,
+        seoTitle: formData.seoTitle,
+        seoDescription: formData.seoDescription,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       if (isEditing) {
         await updateProduct(dataToSend as any);
-        console.log('Product updated successfully', dataToSend);
       } else {
         await addProduct(dataToSend as any);
-        console.log('Product added successfully', dataToSend);
       }
       onProductSave(formData);
     } catch (err: any) {
@@ -144,7 +333,7 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
     }
   };
 
-  const selectedCategory = CATEGORIES.find(cat => cat.slug === formData.category);
+  const selectedCategory = categories.find(cat => cat.slug === formData.category);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -215,13 +404,86 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
                 </div>
 
                 <div>
-                  <Label htmlFor="category">Category *</Label>
-                  <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value as ProductCategoryType)}>
+                  <div className="flex justify-between items-center mb-2">
+                    <Label htmlFor="category">Category *</Label>
+                    <div className="flex space-x-2">
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={refreshCategories}
+                        disabled={isLoadingCategories}
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isLoadingCategories ? 'animate-spin' : ''}`} />
+                      </Button>
+                      <Dialog open={isNewCategoryDialogOpen} onOpenChange={setIsNewCategoryDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button type="button" variant="outline" size="sm">
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add New
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Add New Category</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="new-category-name">Category Name *</Label>
+                              <Input
+                                id="new-category-name"
+                                value={newCategory.name}
+                                onChange={(e) => handleNewCategoryNameChange(e.target.value)}
+                                placeholder="e.g., Sarees, Suits"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="new-category-slug">Slug *</Label>
+                              <Input
+                                id="new-category-slug"
+                                value={newCategory.slug}
+                                onChange={(e) => setNewCategory({...newCategory, slug: e.target.value})}
+                                placeholder="e.g., sarees, suits"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="new-category-description">Description</Label>
+                              <Textarea
+                                id="new-category-description"
+                                value={newCategory.description}
+                                onChange={(e) => setNewCategory({...newCategory, description: e.target.value})}
+                                placeholder="Brief description of this category"
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => setIsNewCategoryDialogOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button type="button" onClick={handleAddCategory}>
+                              Add Category
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
+                  <Select 
+                    value={formData.category} 
+                    onValueChange={(value) => handleInputChange('category', value as ProductCategoryType)}
+                    disabled={isLoadingCategories}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map(category => (
+                      {categories.map(category => (
                         <SelectItem key={category.id} value={category.slug}>
                           {category.name}
                         </SelectItem>
@@ -231,17 +493,95 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
                 </div>
 
                 <div>
-                  <Label htmlFor="subcategory">Subcategory</Label>
+                  <div className="flex justify-between items-center mb-2">
+                    <Label htmlFor="subcategory">Subcategory</Label>
+                    {selectedCategory && (
+                      <Dialog open={isNewSubcategoryDialogOpen} onOpenChange={setIsNewSubcategoryDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button type="button" variant="outline" size="sm">
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add New
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Add New Subcategory</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="subcategory-parent">Parent Category *</Label>
+                              <Select 
+                                value={newSubcategory.categoryId} 
+                                onValueChange={(value) => setNewSubcategory({...newSubcategory, categoryId: value})}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select parent category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {categories.map(category => (
+                                    <SelectItem key={category.id} value={category.id}>
+                                      {category.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="new-subcategory-name">Subcategory Name *</Label>
+                              <Input
+                                id="new-subcategory-name"
+                                value={newSubcategory.name}
+                                onChange={(e) => handleNewSubcategoryNameChange(e.target.value)}
+                                placeholder="e.g., Cotton Sarees, Silk Sarees"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="new-subcategory-slug">Slug *</Label>
+                              <Input
+                                id="new-subcategory-slug"
+                                value={newSubcategory.slug}
+                                onChange={(e) => setNewSubcategory({...newSubcategory, slug: e.target.value})}
+                                placeholder="e.g., cotton-sarees, silk-sarees"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="new-subcategory-description">Description</Label>
+                              <Textarea
+                                id="new-subcategory-description"
+                                value={newSubcategory.description}
+                                onChange={(e) => setNewSubcategory({...newSubcategory, description: e.target.value})}
+                                placeholder="Brief description of this subcategory"
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => setIsNewSubcategoryDialogOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button type="button" onClick={handleAddSubcategory}>
+                              Add Subcategory
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
                   <Select 
                     value={formData.subcategory || ''} 
                     onValueChange={(value) => handleInputChange('subcategory', value)}
-                    disabled={!selectedCategory?.subcategories.length}
+                    disabled={!selectedCategory || !selectedCategory.subcategories?.length}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select subcategory" />
                     </SelectTrigger>
                     <SelectContent>
-                      {selectedCategory?.subcategories.map(subcategory => (
+                      {selectedCategory?.subcategories?.map(subcategory => (
                         <SelectItem key={subcategory.id} value={subcategory.slug}>
                           {subcategory.name}
                         </SelectItem>
