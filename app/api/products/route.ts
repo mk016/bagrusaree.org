@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
+
+// Ensure this route is not statically analyzed
+export const dynamic = 'force-dynamic';
 
 // GET all products
 export async function GET(req: NextRequest) {
