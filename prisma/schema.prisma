@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SUB_ADMIN
+}
+
+model Customer {
+  id                 String             @id @default(uuid())
+  fullName           String?
+  displayName        String?
+  email              String?            @unique
+  isEmailVerified    Boolean?           @default(false)
+  createdAt          DateTime           @default(now())
+  isActive           Boolean            @default(true)
+
+
+  defaultAddressID String?  @unique
+  defaultAddress   Address? @relation("DefaultAddress", fields: [defaultAddressID], references: [id])
+
+  addresses Address[] @relation("CustomerAddresses")
+  paymentTransactions PaymentTransaction[] @relation("CustomerPaymentTransactions")
+  orders              Order[]
+
+  @@map("customers")
+}
+
+model Otp {
+  id          String   @id @default(uuid())
+  email       String
+  otp         String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([email], name: "email_idx")
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  customerID  String
+  houseNo     String
+  streetName  String
+  societyName String
+  area        String
+  pincode     Int
+  city        String
+  district    String
+  state       String
+  createdAt   DateTime @default(now())
+
+  customer   Customer  @relation("CustomerAddresses", fields: [customerID], references: [id])
+  defaultFor Customer? @relation("DefaultAddress")
+  
+  shippingOrders Order[] @relation("ShippingAddress")
+  billingOrders  Order[] @relation("BillingAddress")
+
+  @@map("addresses")
+}
+
+model Admin {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  imagesUrl   String[] // Admin can add multiple images
+  createdAt   DateTime @default(now())
+
+  @@map("admins")
+}
+
+// Product Model
+model Products {
+  id           String   @id @default(uuid())
+  name         String
+  description  String
+  sellingPrice Decimal
+  imagesUrl    String[] // Admin can add multiple product image URLs
+  category     String   // Renamed from 'type'
+  subcategory  String?  // New field for subcategory
+  tags         String[]
+  weight       Int?
+  isAvailable  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedOn    DateTime @default(now())
+  createdBy    String
+  
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+
+// Payment Transaction model to record the users payment 
+model PaymentTransaction {
+  id         String   @id @default(uuid())
+  paymentId  String   @unique
+  customerId String
+  amount     Int
+  status     String
+  createdAt  DateTime @default(now())
+  
+  customer   Customer @relation(fields: [customerId], references: [id], name: "CustomerPaymentTransactions")
+  
+  @@map("payment_transactions")
+}
+
+model Order {
+  id                 String     @id @default(uuid())
+  customerId         String
+  total              Decimal
+  subtotal           Decimal
+  tax                Decimal
+  shippingCost       Decimal
+  status             String
+  shippingAddressId  String
+  billingAddressId   String
+  paymentMethod      String
+  paymentStatus      String
+  trackingNumber     String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  customer           Customer   @relation(fields: [customerId], references: [id])
+  shippingAddress    Address    @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  billingAddress     Address    @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  orderItems         OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  orderId    String
+  productId  String
+  quantity   Int
+  price      Decimal
+  size       String?
+  color      String?
+
+  order      Order    @relation(fields: [orderId], references: [id])
+  product    Products @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// Category Model
+model Category {
+  id            String       @id @default(uuid())
+  name          String       @unique
+  slug          String       @unique
+  description   String?
+  image         String?
+  subcategories Subcategory[]
+  featured      Boolean      @default(false)
+  order         Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("categories")
+}
+
+// Subcategory Model
+model Subcategory {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  image       String?
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("subcategories")
+} 
