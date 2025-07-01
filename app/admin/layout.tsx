@@ -16,10 +16,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <ResponsiveSidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
       
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-64">
+      <div className="flex-1 flex flex-col overflow-hidden ">
         <AdminHeader onMenuToggle={toggleSidebar} />
         
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-1 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
