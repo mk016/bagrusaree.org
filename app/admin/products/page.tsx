@@ -12,9 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { ProductForm } from '@/components/admin/product-management/product-form';
-import { CATEGORIES } from '@/lib/constants';
 import { getProducts, addProduct, updateProduct, deleteProduct } from '@/lib/product-data';
-import { Product } from '@/lib/types';
+import { getCategories } from '@/lib/data';
+import { Product, Category } from '@/lib/types';
 
 export default function AdminProductsPage() {
   const router = useRouter();
@@ -24,6 +24,7 @@ export default function AdminProductsPage() {
   const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,8 +42,18 @@ export default function AdminProductsPage() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const fetchedCategories = await getCategories();
+      setCategories(fetchedCategories);
+    } catch (err: any) {
+      console.error("Failed to fetch categories:", err);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const handleCategoryChange = (value: string) => {
@@ -114,20 +125,21 @@ export default function AdminProductsPage() {
       <div className="flex">
         <AdminSidebar />
         
-        <div className="flex-1 lg:ml-64">
+        {/* Main Content - Responsive without fixed sidebar margin */}
+        <div className="flex-1 w-full lg:pl-64">
           {/* Header */}
           <div className="bg-white border-b border-gray-200">
             <div className="px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-16">
-                <div>
-                  <h1 className="text-2xl font-semibold text-gray-900">Products</h1>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 sm:py-0 sm:h-16 gap-4 sm:gap-0">
+                <div className="pt-12 sm:pt-0">
+                  <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Products</h1>
                   <p className="text-sm text-gray-600">
                     Manage your product catalog
                   </p>
                 </div>
                 <Dialog open={isAddProductDialogOpen} onOpenChange={setIsAddProductDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button className="w-full sm:w-auto">
                       <Plus className="h-4 w-4 mr-2" />
                       Add Product
                     </Button>
@@ -147,12 +159,12 @@ export default function AdminProductsPage() {
           </div>
 
           {/* Main Content */}
-          <div className="px-4 sm:px-6 lg:px-8 py-8">
+          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
             {/* Filters */}
             <Card className="mb-6">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col gap-4">
+                  <div className="w-full">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
@@ -163,119 +175,190 @@ export default function AdminProductsPage() {
                       />
                     </div>
                   </div>
-                  <Select value={selectedCategory || 'all-categories'} onValueChange={handleCategoryChange}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="All Categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-categories">All Categories</SelectItem>
-                      {CATEGORIES.map(category => (
-                        <SelectItem key={category.id} value={category.slug}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={selectedStatus || 'all-status'} onValueChange={handleStatusChange}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="All Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-status">All Status</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Select value={selectedCategory || 'all-categories'} onValueChange={handleCategoryChange}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="All Categories" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all-categories">All Categories</SelectItem>
+                        {categories.map(category => (
+                          <SelectItem key={category.id} value={category.slug}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={selectedStatus || 'all-status'} onValueChange={handleStatusChange}>
+                      <SelectTrigger className="w-full sm:w-32">
+                        <SelectValue placeholder="All Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all-status">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Products Table */}
+            {/* Products Display */}
             <Card>
               <CardHeader>
                 <CardTitle>Products ({filteredProducts.length})</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Stock</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProducts.map((product: Product) => (
-                      <TableRow key={product.id}>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                              {product.images && Array.isArray(product.images) && product.images.length > 0 ? (
-                                <img
-                                  src={product.images[0]}
-                                  alt={product.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <ImageIcon className="h-4 w-4 text-gray-400" />
-                              )}
+              <CardContent className="p-0">
+                {/* Desktop Table View */}
+                <div className="hidden lg:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead>SKU</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Stock</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredProducts.map((product: Product) => (
+                        <TableRow key={product.id}>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                                {product.images && Array.isArray(product.images) && product.images.length > 0 ? (
+                                  <img
+                                    src={product.images[0]}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <ImageIcon className="h-4 w-4 text-gray-400" />
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-medium">{product.name}</div>
+                                <div className="text-sm text-gray-500">
+                                  {product.description.substring(0, 50)}...
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="font-medium">{product.name}</div>
-                              <div className="text-sm text-gray-500">
-                                {product.description.substring(0, 50)}...
+                          </TableCell>
+                          <TableCell>
+                            <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                              N/A
+                            </code>
+                          </TableCell>
+                          <TableCell className="capitalize">
+                            {product.category.replace('-', ' ')}
+                          </TableCell>
+                          <TableCell>
+                            <div>₹{product.price.toLocaleString()}</div>
+                            {product.comparePrice && (
+                              <div className="text-sm text-gray-500 line-through">
+                                ₹{product.comparePrice.toLocaleString()}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStockColor(product.stock)}>
+                              {product.stock} in stock
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(product.status)}>
+                              {product.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Button variant="ghost" size="sm" onClick={() => router.push(`/products/${product.id}`)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleEditProduct(product)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDeleteProduct(product.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="lg:hidden p-4 space-y-4">
+                  {filteredProducts.map((product: Product) => (
+                    <Card key={product.id} className="border border-gray-200">
+                      <CardContent className="p-4">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {product.images && Array.isArray(product.images) && product.images.length > 0 ? (
+                              <img
+                                src={product.images[0]}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <ImageIcon className="h-6 w-6 text-gray-400" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
+                                <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                                  {product.description.substring(0, 80)}...
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                              <div>
+                                <span className="text-gray-500">Category:</span>
+                                <div className="capitalize font-medium">{product.category.replace('-', ' ')}</div>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Price:</span>
+                                <div className="font-medium">₹{product.price.toLocaleString()}</div>
+                              </div>
+                            </div>
+                            
+                            <div className="mt-3 flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <Badge className={getStockColor(product.stock)} variant="secondary">
+                                  {product.stock} in stock
+                                </Badge>
+                                <Badge className={getStatusColor(product.status)} variant="secondary">
+                                  {product.status}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Button variant="ghost" size="sm" onClick={() => router.push(`/products/${product.id}`)}>
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => handleEditProduct(product)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => handleDeleteProduct(product.id)}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <code className="text-sm bg-gray-100 px-2 py-1 rounded">
-                            N/A
-                          </code>
-                        </TableCell>
-                        <TableCell className="capitalize">
-                          {product.category.replace('-', ' ')}
-                        </TableCell>
-                        <TableCell>
-                          <div>₹{product.price.toLocaleString()}</div>
-                          {product.comparePrice && (
-                            <div className="text-sm text-gray-500 line-through">
-                              ₹{product.comparePrice.toLocaleString()}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStockColor(product.stock)}>
-                            {product.stock} in stock
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(product.status)}>
-                            {product.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm" onClick={() => router.push(`/products/${product.id}`)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleEditProduct(product)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDeleteProduct(product.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </div>
