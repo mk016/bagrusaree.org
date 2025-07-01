@@ -1,19 +1,21 @@
 "use client";
 
 import { useParams } from 'next/navigation';
-import { useState, useMemo } from 'react';
-import { Filter, Grid, List, SortAsc } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Grid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
 import { CATEGORIES, MOCK_PRODUCTS } from '@/lib/constants';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { Product, ProductCategoryType } from '@/lib/types';
+
+// Define ProductSubcategoryType as string since it's not defined in types.ts
+type ProductSubcategoryType = string;
 
 const allProducts = [
   ...MOCK_PRODUCTS,
@@ -68,7 +70,6 @@ const allProducts = [
     createdAt: new Date(),
     updatedAt: new Date(),
   },
-  // Add some fabric products for testing
   {
     id: '7',
     name: 'Premium Cotton Fabric',
@@ -106,18 +107,48 @@ const allProducts = [
 ];
 
 export default function SubcategoryPage() {
-  const { categorySlug, subcategorySlug } = useParams();
+  const params = useParams();
+  const categorySlug = params?.categorySlug as string;
+  const subcategorySlug = params?.subcategorySlug as string;
+  
   const [sortBy, setSortBy] = useState('newest');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const category = CATEGORIES.find(cat => cat.slug === categorySlug);
-  const subcategory = category?.subcategories.find(sub => sub.slug === subcategorySlug);
+  const category = useMemo(() => 
+    CATEGORIES.find(cat => cat.slug === categorySlug), 
+    [categorySlug]
+  );
   
+  const subcategory = useMemo(() => 
+    category?.subcategories.find(sub => sub.slug === subcategorySlug), 
+    [category, subcategorySlug]
+  );
+
+  useEffect(() => {
+    if (categorySlug && subcategorySlug) {
+      setIsLoading(false);
+    }
+  }, [categorySlug, subcategorySlug]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+      </div>
+    );
+  }
+
   if (!category || !subcategory) {
     notFound();
   }
 
   const subcategoryProducts = useMemo(() => {
+    if (!categorySlug || !subcategorySlug) return [];
+
     let filtered = allProducts.filter(product => 
       product.category === categorySlug && product.subcategory === subcategorySlug
     );
@@ -151,11 +182,16 @@ export default function SubcategoryPage() {
       <div className="bg-gray-50 py-4">
         <div className="container mx-auto px-4">
           <nav className="flex items-center space-x-2 text-sm text-gray-600">
-            <a href="/" className="hover:text-indigo-600">Home</a>
+            <Link href="/" className="hover:text-indigo-600 transition-colors">
+              Home
+            </Link>
             <span>/</span>
-            <a href={`/category/${categorySlug}`} className="hover:text-indigo-600">
+            <Link 
+              href={`/category/${categorySlug}`} 
+              className="hover:text-indigo-600 transition-colors"
+            >
               {category.name}
-            </a>
+            </Link>
             <span>/</span>
             <span className="text-gray-900">{subcategory.name}</span>
           </nav>
@@ -176,9 +212,9 @@ export default function SubcategoryPage() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Toolbar */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div className="text-sm text-gray-600">
-            {subcategoryProducts.length} products found
+            {subcategoryProducts.length} product{subcategoryProducts.length !== 1 ? 's' : ''} found
           </div>
 
           <div className="flex items-center space-x-4">
@@ -237,7 +273,7 @@ export default function SubcategoryPage() {
             {subcategoryProducts.map(product => (
               <ProductCard 
                 key={product.id} 
-                product={product}
+                product={product as unknown as Product}
                 className={viewMode === 'list' ? 'flex flex-row' : ''}
               />
             ))}
