@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, Upload, X, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,36 +13,73 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CATEGORIES } from '@/lib/constants';
+import { addProduct, updateProduct } from '@/lib/product-data';
+import { Product, ProductCategoryType } from '@/lib/types';
 
 interface ProductFormProps {
-  product?: any;
+  product?: Product;
   isEditing?: boolean;
+  onProductSave: (product: Product) => void;
 }
 
-export function ProductForm({ product, isEditing = false }: ProductFormProps) {
+export function ProductForm({ product, isEditing = false, onProductSave }: ProductFormProps) {
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Product>({
+    id: product?.id || '',
     name: product?.name || '',
     description: product?.description || '',
-    price: product?.price || '',
-    comparePrice: product?.comparePrice || '',
-    category: product?.category || '',
-    subcategory: product?.subcategory || '',
-    sku: product?.sku || '',
-    stock: product?.stock || '',
+    price: product?.price || 0,
+    comparePrice: product?.comparePrice || undefined,
+    category: product?.category || 'uncategorized',
+    subcategory: product?.subcategory || undefined,
+    stock: product?.stock || 0,
     featured: product?.featured || false,
     status: product?.status || 'active',
     tags: product?.tags || [],
     seoTitle: product?.seoTitle || '',
     seoDescription: product?.seoDescription || '',
+    createdAt: product?.createdAt || new Date(),
+    updatedAt: product?.updatedAt || new Date(),
+    images: product?.images || [],
   });
 
   const [images, setImages] = useState<string[]>(product?.images || []);
   const [newTag, setNewTag] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  useEffect(() => {
+    if (product && isEditing) {
+      setFormData({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        comparePrice: product.comparePrice,
+        category: product.category,
+        subcategory: product.subcategory,
+        stock: product.stock,
+        featured: product.featured,
+        status: product.status,
+        tags: product.tags,
+        seoTitle: product.seoTitle,
+        seoDescription: product.seoDescription,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt,
+        images: product.images,
+      });
+      setImages(product.images);
+    }
+  }, [product, isEditing]);
+
+  const handleInputChange = (field: keyof Product, value: any) => {
+    if (field === 'price' || field === 'comparePrice' || field === 'stock') {
+      setFormData(prev => ({ ...prev, [field]: parseFloat(value) || 0 }));
+    } else if (field === 'featured') {
+      setFormData(prev => ({ ...prev, [field]: !!value }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,17 +113,32 @@ export function ProductForm({ product, isEditing = false }: ProductFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Product data:', { ...formData, images });
-      
-      // Redirect back to products list
-      router.push('/admin/products');
-    } catch (error) {
-      console.error('Error saving product:', error);
+      const dataToSend = {
+        id: formData.id,
+        name: formData.name,
+        description: formData.description,
+        sellingPrice: parseFloat(formData.price as any) || 0,
+        imagesUrl: images || [],
+        type: formData.category,
+        tags: formData.tags,
+        isAvailable: formData.status === 'active',
+        createdBy: 'Admin',
+      };
+
+      if (isEditing) {
+        await updateProduct(dataToSend as any);
+        console.log('Product updated successfully', dataToSend);
+      } else {
+        await addProduct(dataToSend as any);
+        console.log('Product added successfully', dataToSend);
+      }
+      onProductSave(formData);
+    } catch (err: any) {
+      console.error('Error saving product:', err);
+      setError(err.message || 'An unexpected error occurred.');
     } finally {
       setIsLoading(false);
     }
@@ -96,6 +148,7 @@ export function ProductForm({ product, isEditing = false }: ProductFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {error && <div className="text-red-500 text-sm mb-4">Error: {error}</div>}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -109,7 +162,8 @@ export function ProductForm({ product, isEditing = false }: ProductFormProps) {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.back()}
+            onClick={() => onProductSave(formData)}
+            disabled={isLoading}
           >
             Cancel
           </Button>
@@ -162,7 +216,7 @@ export function ProductForm({ product, isEditing = false }: ProductFormProps) {
 
                 <div>
                   <Label htmlFor="category">Category *</Label>
-                  <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
+                  <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value as ProductCategoryType)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -179,7 +233,7 @@ export function ProductForm({ product, isEditing = false }: ProductFormProps) {
                 <div>
                   <Label htmlFor="subcategory">Subcategory</Label>
                   <Select 
-                    value={formData.subcategory} 
+                    value={formData.subcategory || ''} 
                     onValueChange={(value) => handleInputChange('subcategory', value)}
                     disabled={!selectedCategory?.subcategories.length}
                   >
@@ -197,18 +251,8 @@ export function ProductForm({ product, isEditing = false }: ProductFormProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor="sku">SKU</Label>
-                  <Input
-                    id="sku"
-                    value={formData.sku}
-                    onChange={(e) => handleInputChange('sku', e.target.value)}
-                    placeholder="Product SKU"
-                  />
-                </div>
-
-                <div>
                   <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                  <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value as 'active' | 'draft' | 'archived')}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -248,14 +292,19 @@ export function ProductForm({ product, isEditing = false }: ProductFormProps) {
                     </Badge>
                   ))}
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex gap-2">
                   <Input
+                    placeholder="Add a new tag"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
-                    placeholder="Add a tag"
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addTag();
+                      }
+                    }}
                   />
-                  <Button type="button" onClick={addTag}>
+                  <Button type="button" onClick={addTag} variant="outline">
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
@@ -267,47 +316,37 @@ export function ProductForm({ product, isEditing = false }: ProductFormProps) {
         <TabsContent value="media" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Product Images</CardTitle>
+              <CardTitle>Product Media</CardTitle>
               <CardDescription>
-                Upload high-quality images of your product
+                Add images for your product
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={image}
-                        alt={`Product ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeImage(index)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <Upload className="w-8 h-8 mb-2 text-gray-500" />
-                      <p className="text-xs text-gray-500">Upload Image</p>
-                    </div>
-                    <input
-                      type="file"
-                      className="hidden"
-                      multiple
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                    />
-                  </label>
-                </div>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="image-upload">Upload Images</Label>
+                <Input
+                  id="image-upload"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {images.map((image, index) => (
+                  <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border">
+                    <img src={image} alt={`Product Image ${index + 1}`} className="w-full h-full object-cover" />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeImage(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -318,11 +357,11 @@ export function ProductForm({ product, isEditing = false }: ProductFormProps) {
             <CardHeader>
               <CardTitle>Pricing & Inventory</CardTitle>
               <CardDescription>
-                Set pricing and manage inventory for this product
+                Set price and manage stock levels
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="price">Price *</Label>
                   <Input
@@ -330,30 +369,29 @@ export function ProductForm({ product, isEditing = false }: ProductFormProps) {
                     type="number"
                     value={formData.price}
                     onChange={(e) => handleInputChange('price', e.target.value)}
-                    placeholder="0.00"
+                    placeholder="Enter price"
                     required
                   />
                 </div>
-
                 <div>
                   <Label htmlFor="comparePrice">Compare at Price</Label>
                   <Input
                     id="comparePrice"
                     type="number"
-                    value={formData.comparePrice}
+                    value={formData.comparePrice ?? ''}
                     onChange={(e) => handleInputChange('comparePrice', e.target.value)}
-                    placeholder="0.00"
+                    placeholder="Optional compare price"
                   />
                 </div>
-
                 <div>
-                  <Label htmlFor="stock">Stock Quantity</Label>
+                  <Label htmlFor="stock">Stock *</Label>
                   <Input
                     id="stock"
                     type="number"
                     value={formData.stock}
                     onChange={(e) => handleInputChange('stock', e.target.value)}
-                    placeholder="0"
+                    placeholder="Enter stock quantity"
+                    required
                   />
                 </div>
               </div>
@@ -364,9 +402,9 @@ export function ProductForm({ product, isEditing = false }: ProductFormProps) {
         <TabsContent value="seo" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>SEO & Meta Information</CardTitle>
+              <CardTitle>SEO & Meta</CardTitle>
               <CardDescription>
-                Optimize your product for search engines
+                Optimize for search engines
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -376,25 +414,18 @@ export function ProductForm({ product, isEditing = false }: ProductFormProps) {
                   id="seoTitle"
                   value={formData.seoTitle}
                   onChange={(e) => handleInputChange('seoTitle', e.target.value)}
-                  placeholder="SEO optimized title"
+                  placeholder="Meta title for search engines"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  {formData.seoTitle.length}/60 characters
-                </p>
               </div>
-
               <div>
                 <Label htmlFor="seoDescription">SEO Description</Label>
                 <Textarea
                   id="seoDescription"
                   value={formData.seoDescription}
                   onChange={(e) => handleInputChange('seoDescription', e.target.value)}
-                  placeholder="SEO meta description"
+                  placeholder="Meta description for search engines"
                   rows={3}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  {formData.seoDescription.length}/160 characters
-                </p>
               </div>
             </CardContent>
           </Card>
