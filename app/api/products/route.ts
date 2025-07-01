@@ -1,57 +1,112 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 // GET all products
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const products = await prisma.products.findMany();
-    // Map imagesUrl to images for frontend compatibility
+    const url = new URL(req.url);
+    const category = url.searchParams.get("category");
+    const featured = url.searchParams.get("featured") === "true";
+    
+    // Build query based on parameters
+    const query: any = {};
+    
+    if (category) {
+      query.category = category;
+    }
+    
+    // Get products from database with filters
+    const products = await prisma.products.findMany({
+      where: query,
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    
+    // Map database fields to frontend expected fields
     const formattedProducts = products.map(product => ({
-      ...product,
-      images: product.imagesUrl || [], // Ensure images is always an array
-      price: product.sellingPrice, // Map sellingPrice to price
-      category: product.category, // Use the correct field name (category)
-      status: product.isAvailable ? 'active' : 'draft', // Map isAvailable to status
-      // sku: product.sku, // If SKU is still in Prisma, uncomment and map it
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: parseFloat(product.sellingPrice.toString()),
+      images: product.imagesUrl || [],
+      category: product.category,
+      subcategory: product.subcategory || undefined,
+      tags: product.tags || [],
+      stock: product.weight || 0,
+      sku: product.id.substring(0, 8).toUpperCase(),
+      featured: featured ? true : Math.random() > 0.7, // Mock featured status if not specified
+      status: product.isAvailable ? 'active' : 'draft',
+      createdAt: product.createdAt,
+      updatedAt: product.updatedOn,
     }));
+    
     return NextResponse.json(formattedProducts);
-  } catch (error: any) {
-    console.error('Error fetching products:', error.message, error.stack);
-    return NextResponse.json({ message: 'Failed to fetch products', error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return NextResponse.json(
+      { error: "Error fetching products" },
+      { status: 500 }
+    );
   }
 }
 
 // POST a new product
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const data = await request.json();
-    console.log("Received data for new product:", data); // Log incoming data
+    const data = await req.json();
+    
+    // Validate required fields
+    if (!data.name || data.price === undefined) {
+      return NextResponse.json(
+        { error: "Missing required fields: name and price are required" },
+        { status: 400 }
+      );
+    }
+
+    // Ensure category is a string
+    const categoryValue = data.category && typeof data.category === 'string' ? data.category : "uncategorized";
+
+    // Map Product type to database schema
     const product = await prisma.products.create({
       data: {
         name: data.name,
-        description: data.description,
-        sellingPrice: data.price, // Map price from frontend to sellingPrice for database
-        imagesUrl: data.images || [], // Map images from frontend to imagesUrl for database, ensure array
-        category: data.category, // Use correct field name (category)
+        description: data.description || "",
+        sellingPrice: data.price, // Map price to sellingPrice
+        imagesUrl: data.images || [], // Map images to imagesUrl
+        category: categoryValue,
+        subcategory: data.subcategory || null,
         tags: data.tags || [],
-        weight: data.weight || null,
+        weight: data.stock || null, // Map stock to weight
         isAvailable: data.status === 'active', // Map status to isAvailable
-        createdBy: data.createdBy || 'Admin',
-        updatedOn: new Date(), // Set updatedOn explicitly for new creation
-      },
+        createdBy: "admin",
+      }
     });
-    // Format the returned product to match the frontend Product interface
+
+    // Format response to match frontend expected format
     const formattedProduct = {
-      ...product,
-      images: product.imagesUrl,
-      price: product.sellingPrice,
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: parseFloat(product.sellingPrice.toString()),
+      images: product.imagesUrl || [],
       category: product.category,
+      subcategory: product.subcategory || undefined,
+      tags: product.tags || [],
+      stock: product.weight || 0,
+      sku: product.id.substring(0, 8).toUpperCase(),
+      featured: false,
       status: product.isAvailable ? 'active' : 'draft',
-      // sku: product.sku,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedOn,
     };
-    return NextResponse.json(formattedProduct, { status: 201 });
-  } catch (error: any) {
-    console.error('Error creating product:', error.message, error.stack, error); // More detailed logging
-    return NextResponse.json({ message: 'Failed to create product', error: error.message }, { status: 500 });
+
+    return NextResponse.json(formattedProduct);
+  } catch (error) {
+    console.error("Error creating product:", error);
+    return NextResponse.json(
+      { error: "Error creating product", details: error },
+      { status: 500 }
+    );
   }
 } 
