@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useMemo } from 'react';
-import { Search, Filter, Grid, List, SortAsc } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Search, Filter, Grid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,88 +16,139 @@ import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
 import { CATEGORIES } from '@/lib/constants';
-import { getAllProducts } from '@/lib/data';
+import { getProducts } from '@/lib/product-data';
+import { Product, ProductCategoryType } from '@/lib/types';
 
 export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [priceRange, setPriceRange] = useState([0, 10000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState('newest');
+  const [sortBy, setSortBy] = useState<'newest' | 'price-low' | 'price-high' | 'name'>('newest');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const allProducts = getAllProducts();
+  // Fetch products from Google Sheet via getProducts
+  useEffect(() => {
+    const fetchAndSetProducts = async () => {
+      try {
+        const fetchedProducts = await getProducts();
+        setProducts(fetchedProducts);
+      } catch (e: any) {
+        setError(e.message);
+        console.error("Fetching error:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchAndSetProducts();
+  }, []);
+
+  // All tags from products
   const allTags = useMemo(() => {
     const tags = new Set<string>();
-    allProducts.forEach(product => {
-      product.tags.forEach(tag => tags.add(tag));
+    products.forEach((product) => {
+      if (Array.isArray(product.tags)) {
+        product.tags.forEach((tag) => tags.add(tag));
+      }
     });
     return Array.from(tags);
-  }, [allProducts]);
+  }, [products]);
 
+  // All categories from products (for fallback if CATEGORIES is empty)
+  const allCategories = useMemo(() => {
+    const cats = new Set<string>();
+    products.forEach((product) => {
+      if (product.category) cats.add(product.category);
+    });
+    // Map `ProductCategoryType` union to simple string array for display if needed
+    return Array.from(cats);
+  }, [products]);
+
+  // Filtered and sorted products
   const filteredProducts = useMemo(() => {
-    let filtered = allProducts.filter(product => {
+    let filtered = products.filter((product) => {
       // Search filter
-      if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      if (
+        searchQuery &&
+        !(product.name?.toLowerCase().includes(searchQuery.toLowerCase()))
+      ) {
         return false;
       }
-      
+
       // Category filter
       if (selectedCategory && product.category !== selectedCategory) {
         return false;
       }
-      
+
       // Price filter
-      if (product.price < priceRange[0] || product.price > priceRange[1]) {
+      if (
+        typeof product.price === 'number' &&
+        (product.price < priceRange[0] || product.price > priceRange[1])
+      ) {
         return false;
       }
-      
+
       // Tags filter
-      if (selectedTags.length > 0 && !selectedTags.some(tag => product.tags.includes(tag))) {
+      if (
+        selectedTags.length > 0 &&
+        (!Array.isArray(product.tags) ||
+          !selectedTags.some((tag) => product.tags?.includes(tag))) // Ensure product.tags is an array
+      ) {
         return false;
       }
-      
+
       return true;
     });
 
     // Sort products
     switch (sortBy) {
       case 'price-low':
-        filtered.sort((a, b) => a.price - b.price);
+        filtered.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
         break;
       case 'price-high':
-        filtered.sort((a, b) => b.price - a.price);
+        filtered.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
         break;
       case 'name':
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        filtered.sort((a, b) =>
+          (a.name ?? '').localeCompare(b.name ?? '')
+        );
         break;
       case 'newest':
       default:
-        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        filtered.sort((a, b) => {
+          const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return bDate - aDate;
+        });
         break;
     }
 
     return filtered;
-  }, [searchQuery, selectedCategory, priceRange, selectedTags, sortBy, allProducts]);
+  }, [searchQuery, selectedCategory, priceRange, selectedTags, sortBy, products]);
 
+  // Group products by category name
   const groupedProducts = useMemo(() => {
-    return filteredProducts.reduce((acc, product) => {
-      const categoryName = CATEGORIES.find(cat => cat.slug === product.category)?.name || 'Uncategorized';
+    return filteredProducts.reduce<Record<string, Product[]>>((acc, product) => { // Use Product[] here
+      const categoryName =
+        CATEGORIES.find((cat) => cat.slug === product.category)?.name ||
+        product.category ||
+        'Uncategorized';
       if (!acc[categoryName]) {
         acc[categoryName] = [];
       }
       acc[categoryName].push(product);
       return acc;
-    }, {} as Record<string, typeof filteredProducts>);
+    }, {});
   }, [filteredProducts]);
 
   const handleTagToggle = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
 
@@ -133,17 +183,23 @@ export default function ProductsPage() {
       {/* Category Filter */}
       <div>
         <Label className="text-sm font-medium mb-2 block">Category</Label>
-        <Select value={selectedCategory || 'all-categories'} onValueChange={handleCategoryChange}>
+        <Select
+          value={selectedCategory || 'all-categories'}
+          onValueChange={handleCategoryChange}
+        >
           <SelectTrigger>
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all-categories">All Categories</SelectItem>
-            {CATEGORIES.map(category => (
-              <SelectItem key={category.id} value={category.slug}>
-                {category.name}
-              </SelectItem>
-            ))}
+            {/* Use CATEGORIES from constants or dynamically generated allCategories if CATEGORIES is empty */}
+            {(CATEGORIES.length > 0 ? CATEGORIES : allCategories.map((cat: string) => ({ id: cat, slug: cat, name: cat }))).map(
+              (category) => (
+                <SelectItem key={category.id} value={category.slug}>
+                  {category.name}
+                </SelectItem>
+              )
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -155,7 +211,7 @@ export default function ProductsPage() {
         </Label>
         <Slider
           value={priceRange}
-          onValueChange={setPriceRange}
+          onValueChange={(val: [number, number]) => setPriceRange(val)}
           max={10000}
           min={0}
           step={100}
@@ -167,7 +223,7 @@ export default function ProductsPage() {
       <div>
         <Label className="text-sm font-medium mb-2 block">Tags</Label>
         <div className="flex flex-wrap gap-2">
-          {allTags.map(tag => (
+          {allTags.map((tag) => (
             <div key={tag} className="flex items-center space-x-2">
               <Checkbox
                 id={tag}
@@ -187,6 +243,14 @@ export default function ProductsPage() {
       </Button>
     </div>
   );
+
+  if (loading) {
+    return <div className="p-8 text-center">Loading products...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -243,7 +307,7 @@ export default function ProductsPage() {
 
               <div className="flex items-center space-x-4">
                 {/* Sort */}
-                <Select value={sortBy} onValueChange={setSortBy}>
+                <Select value={sortBy} onValueChange={(val) => setSortBy(val as typeof sortBy)}>
                   <SelectTrigger className="w-48">
                     <SelectValue />
                   </SelectTrigger>
@@ -284,8 +348,14 @@ export default function ProductsPage() {
                       {categoryName} ({products.length})
                     </AccordionTrigger>
                     <AccordionContent className="pt-4">
-                      <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
-                        {products.map((product) => (
+                      <div
+                        className={
+                          viewMode === 'grid'
+                            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
+                            : 'space-y-4'
+                        }
+                      >
+                        {products.map((product: Product) => ( // Explicitly type product here
                           <ProductCard key={product.id} product={product} />
                         ))}
                       </div>
