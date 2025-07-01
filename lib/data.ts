@@ -1,17 +1,18 @@
-import { getProductsFromRawData } from './product-data';
+import { getProducts } from './product-data';
 import { Product, Order, User, Category, Review, ShippingMethod, ContentPage, Analytics } from './types';
 
-export const allProducts = getProductsFromRawData();
-
-export function getProductById(id: string) {
+export async function getProductById(id: string): Promise<Product | undefined> {
+  const allProducts = await getProducts();
   return allProducts.find(product => product.id === id);
 }
 
-export function getProductsByCategory(category: string) {
+export async function getProductsByCategory(category: string): Promise<Product[]> {
+  const allProducts = await getProducts();
   return allProducts.filter(product => product.category === category);
 }
 
-export function getAllProducts() {
+export async function getAllProducts(): Promise<Product[]> {
+  const allProducts = await getProducts();
   return allProducts;
 }
 
@@ -166,13 +167,27 @@ export function generateMockAnalytics(): Analytics {
     totalCustomers: Math.floor(Math.random() * 2000 + 500),
     conversionRate: parseFloat((Math.random() * 0.05 + 0.01).toFixed(4)),
     avgOrderValue: parseFloat((Math.random() * 100 + 50).toFixed(2)),
-    topProducts: allProducts.slice(0, 5).sort(() => 0.5 - Math.random()),
+    topProducts: [],
     salesByCategory: [
       { category: 'Sarees', sales: parseFloat((Math.random() * 20000).toFixed(2)) },
       { category: 'Suit Sets', sales: parseFloat((Math.random() * 15000).toFixed(2)) },
       { category: 'Dupattas', sales: parseFloat((Math.random() * 8000).toFixed(2)) },
       { category: 'Bedsheets', sales: parseFloat((Math.random() * 5000).toFixed(2)) },
     ],
-    recentOrders: generateMockOrders(5, generateMockUsers(5), allProducts),
+    recentOrders: generateMockOrders(5, generateMockUsers(5), []),
   };
 }
+
+export const getOrders = async (): Promise<Order[]> => {
+  try {
+    const response = await fetch('/api/orders');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const orders: Order[] = await response.json();
+    return orders;
+  } catch (e: any) {
+    console.error("Error fetching orders:", e);
+    throw e;
+  }
+};
