@@ -12,9 +12,23 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
-import { CATEGORIES } from '@/lib/constants';
+import { API_ENDPOINTS } from '@/lib/constants';
 import { getAllProducts } from '@/lib/data';
 import { Product } from '@/lib/types';
+
+// Define the Category type
+interface Subcategory {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  subcategories: Subcategory[];
+}
 
 export default function CategoryPage() {
   const { categorySlug } = useParams();
@@ -23,6 +37,8 @@ export default function CategoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryLoading, setCategoryLoading] = useState(true);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -37,10 +53,32 @@ export default function CategoryPage() {
         setLoading(false);
       }
     };
+    
+    const fetchCategories = async () => {
+      try {
+        setCategoryLoading(true);
+        const response = await fetch(API_ENDPOINTS.CATEGORIES);
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data);
+        } else {
+          throw new Error("Failed to fetch categories");
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      } finally {
+        setCategoryLoading(false);
+      }
+    };
+    
     fetchProducts();
+    fetchCategories();
   }, []);
 
-  const category = CATEGORIES.find(cat => cat.slug === categorySlug);
+  const category = useMemo(() => {
+    if (categoryLoading || !categories.length) return null;
+    return categories.find(cat => cat.slug === categorySlug);
+  }, [categories, categorySlug, categoryLoading]);
   
   const categoryProducts = useMemo(() => {
     if (!category || loading || error) return [];
@@ -60,12 +98,28 @@ export default function CategoryPage() {
         break;
       case 'newest':
       default:
-        filtered.sort((a: Product, b: Product) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+        filtered.sort((a: Product, b: Product) => {
+          const aDate = a.createdAt ? (typeof a.createdAt === 'string' ? new Date(a.createdAt) : a.createdAt) : new Date(0);
+          const bDate = b.createdAt ? (typeof b.createdAt === 'string' ? new Date(b.createdAt) : b.createdAt) : new Date(0);
+          return bDate.getTime() - aDate.getTime();
+        });
         break;
     }
 
     return filtered;
   }, [categorySlug, sortBy, products, category, loading, error]);
+
+  if (loading || categoryLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="container mx-auto px-4 py-8 text-center">
+          Loading products...
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!category) {
     return (
@@ -76,18 +130,6 @@ export default function CategoryPage() {
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Category not found</h1>
             <Button onClick={() => window.history.back()}>Go Back</Button>
           </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <div className="container mx-auto px-4 py-8 text-center">
-          Loading products...
         </div>
         <Footer />
       </div>
@@ -125,7 +167,7 @@ export default function CategoryPage() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Subcategories */}
-        {category.subcategories.length > 0 && (
+        {category.subcategories && category.subcategories.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Shop by Style</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
