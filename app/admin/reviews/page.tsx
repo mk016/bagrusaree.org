@@ -1,10 +1,39 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { generateMockReviews, generateMockUsers, getAllProducts } from '@/lib/data';
-import { Review } from '@/lib/types';
+import { Review, User, Product } from '@/lib/types';
 
 export default function ReviewsPage() {
-  const users = generateMockUsers(10);
-  const products = getAllProducts();
-  const reviews: Review[] = generateMockReviews(20, users, products);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const users = generateMockUsers(10);
+        const products = await getAllProducts();
+        const generatedReviews: Review[] = generateMockReviews(20, users, products);
+        setReviews(generatedReviews);
+      } catch (err: any) {
+        console.error("Failed to load reviews:", err);
+        setError("Failed to load reviews.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div className="container mx-auto py-8 text-center">Loading reviews...</div>;
+  }
+
+  if (error) {
+    return <div className="container mx-auto py-8 text-center text-red-600">Error: {error}</div>;
+  }
 
   return (
     <div className="container mx-auto py-8">
@@ -23,17 +52,23 @@ export default function ReviewsPage() {
             </tr>
           </thead>
           <tbody>
-            {reviews.map((review) => (
-              <tr key={review.id} className="border-b last:border-b-0">
-                <td className="py-3 px-4 text-sm text-gray-800">{review.id}</td>
-                <td className="py-3 px-4 text-sm text-gray-800">{review.product.name}</td>
-                <td className="py-3 px-4 text-sm text-gray-800">{review.user.name}</td>
-                <td className="py-3 px-4 text-sm text-gray-800">{review.rating} / 5</td>
-                <td className="py-3 px-4 text-sm text-gray-800">{review.title}</td>
-                <td className="py-3 px-4 text-sm text-gray-800">{review.verified ? 'Yes' : 'No'}</td>
-                <td className="py-3 px-4 text-sm text-gray-800">{new Date(review.createdAt).toLocaleDateString()}</td>
+            {reviews.length === 0 ? (
+              <tr className="border-b last:border-b-0">
+                <td colSpan={7} className="py-3 px-4 text-sm text-gray-800 text-center">No reviews found.</td>
               </tr>
-            ))}
+            ) : (
+              reviews.map((review) => (
+                <tr key={review.id} className="border-b last:border-b-0">
+                  <td className="py-3 px-4 text-sm text-gray-800">{review.id}</td>
+                  <td className="py-3 px-4 text-sm text-gray-800">{review.product.name}</td>
+                  <td className="py-3 px-4 text-sm text-gray-800">{review.user.name}</td>
+                  <td className="py-3 px-4 text-sm text-gray-800">{review.rating} / 5</td>
+                  <td className="py-3 px-4 text-sm text-gray-800">{review.title}</td>
+                  <td className="py-3 px-4 text-sm text-gray-800">{review.verified ? 'Yes' : 'No'}</td>
+                  <td className="py-3 px-4 text-sm text-gray-800">{new Date(review.createdAt).toLocaleDateString()}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
