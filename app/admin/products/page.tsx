@@ -11,17 +11,39 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
+import { ProductForm } from '@/components/admin/product-management/product-form';
 import { CATEGORIES } from '@/lib/constants';
-import { getAllProducts } from '@/lib/data';
+import { getProducts, addProduct, updateProduct, deleteProduct } from '@/lib/product-data';
+import { Product } from '@/lib/types';
 
 export default function AdminProductsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
 
-  const allProducts = getAllProducts();
-  const [products, setProducts] = useState(allProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const fetchedProducts = await getProducts();
+      setProducts(fetchedProducts);
+      setError(null);
+    } catch (err: any) {
+      console.error("Failed to fetch products:", err);
+      setError("Failed to load products: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value === 'all-categories' ? '' : value);
@@ -31,9 +53,37 @@ export default function AdminProductsPage() {
     setSelectedStatus(value === 'all-status' ? '' : value);
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.sku.toLowerCase().includes(searchQuery.toLowerCase());
+  const handleAddProductSuccess = async (newProduct: Product) => {
+    setIsAddProductDialogOpen(false);
+    await fetchProducts();
+  };
+
+  const handleEditProduct = (product: Product) => {
+    router.push(`/admin/products/${product.id}/edit`);
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    if (confirm(`Are you sure you want to delete product with ID: ${id}?`)) {
+      try {
+        await deleteProduct(id);
+        await fetchProducts();
+      } catch (err: any) {
+        console.error("Failed to delete product:", err);
+        setError("Failed to delete product: " + err.message);
+      }
+    }
+  };
+
+  if (loading) {
+    return <div className="p-8 text-center">Loading products...</div>;
+  }
+
+  if (error) {
+    return <div className="p-8 text-center text-red-600">Error: {error}</div>;
+  }
+
+  const filteredProducts = products.filter((product: Product) => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !selectedCategory || product.category === selectedCategory;
     const matchesStatus = !selectedStatus || product.status === selectedStatus;
     
@@ -75,10 +125,23 @@ export default function AdminProductsPage() {
                     Manage your product catalog
                   </p>
                 </div>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Product
-                </Button>
+                <Dialog open={isAddProductDialogOpen} onOpenChange={setIsAddProductDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Product
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Add New Product</DialogTitle>
+                      <DialogDescription>
+                        Fill in the details to create a new product.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <ProductForm onProductSave={handleAddProductSuccess} />
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </div>
@@ -147,12 +210,12 @@ export default function AdminProductsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredProducts.map((product) => (
+                    {filteredProducts.map((product: Product) => (
                       <TableRow key={product.id}>
                         <TableCell>
                           <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                              {product.images.length > 0 ? (
+                              {product.images && Array.isArray(product.images) && product.images.length > 0 ? (
                                 <img
                                   src={product.images[0]}
                                   alt={product.name}
@@ -172,7 +235,7 @@ export default function AdminProductsPage() {
                         </TableCell>
                         <TableCell>
                           <code className="text-sm bg-gray-100 px-2 py-1 rounded">
-                            {product.sku}
+                            N/A
                           </code>
                         </TableCell>
                         <TableCell className="capitalize">
@@ -198,13 +261,13 @@ export default function AdminProductsPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" onClick={() => router.push(`/products/${product.id}`)}>
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" onClick={() => handleEditProduct(product)}>
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteProduct(product.id)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
