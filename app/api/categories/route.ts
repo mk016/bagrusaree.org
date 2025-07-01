@@ -1,9 +1,11 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
 
 // GET all categories
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    // Get categories from database
     const categories = await prisma.category.findMany({
       include: {
         subcategories: true, // Include subcategories
@@ -20,9 +22,28 @@ export async function GET() {
 }
 
 // POST a new category
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const data = await request.json();
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    
+    const data = await req.json();
+    
+    // Validate required fields
+    if (!data.name || !data.slug) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+    
+    // Create category
     const category = await prisma.category.create({
       data: {
         name: data.name,
