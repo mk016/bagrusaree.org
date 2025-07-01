@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Star, Heart, Share2, ShoppingCart, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -63,16 +63,29 @@ export default function ProductDetailPageClient({ product }: ProductDetailPageCl
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   
   const { addItem: addToCart } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
 
   const isWishlisted = isInWishlist(product.id);
   
-  const allProducts = getAllProducts();
-  const relatedProducts = allProducts
-    .filter(p => p.id !== product.id && p.category === product.category)
-    .slice(0, 4);
+  // Fetch related products asynchronously
+  useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      try {
+        const allProducts = await getAllProducts();
+        const related = allProducts
+          .filter(p => p.id !== product.id && p.category === product.category)
+          .slice(0, 4);
+        setRelatedProducts(related);
+      } catch (error) {
+        console.error("Error fetching related products:", error);
+      }
+    };
+    
+    fetchRelatedProducts();
+  }, [product.id, product.category]);
 
   const discountPercentage = product.comparePrice 
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
