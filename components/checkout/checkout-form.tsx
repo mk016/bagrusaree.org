@@ -160,6 +160,23 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
       // Generate order summary
       const orderDetails = generateOrderSummary();
       
+      // Send order to backend API
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderDetails),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to place order via API');
+      }
+
+      const result = await response.json();
+      console.log('Order successfully placed in database:', result);
+
       // Send to WhatsApp
       sendToWhatsApp(orderDetails);
       
@@ -170,6 +187,8 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
       router.push('/checkout/success');
     } catch (error) {
       console.error('Error processing order:', error);
+      // Optionally display an error message to the user
+      alert(`Order placement failed: ${(error as Error).message}`);
     } finally {
       setIsProcessing(false);
     }
