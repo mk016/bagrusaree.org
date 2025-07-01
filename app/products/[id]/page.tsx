@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Star, Heart, Share2, ShoppingCart, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import { FloatingWhatsApp } from '@/components/ui/floating-whatsapp';
 import { useCartStore, useWishlistStore } from '@/lib/store';
 import { getAllProducts } from '@/lib/data';
 import { cn } from '@/lib/utils';
+import { Product } from '@/lib/types';
 
 const mockReviews = [
   {
@@ -61,17 +62,59 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const { addItem: addToCart } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
 
-  const allProducts = getAllProducts();
-  const product = allProducts.find(p => p.id === id);
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const fetchedProducts = await getAllProducts();
+        setProducts(fetchedProducts);
+      } catch (err: any) {
+        console.error("Failed to fetch products for product detail page:", err);
+        setError("Failed to load product details.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  const product = products.find((p: Product) => p.id === id);
   const isWishlisted = product ? isInWishlist(product.id) : false;
   
-  const relatedProducts = allProducts
-    .filter(p => p.id !== id && p.category === product?.category)
+  const relatedProducts = products
+    .filter((p: Product) => p.id !== id && p.category === product?.category)
     .slice(0, 4);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="container mx-auto px-4 py-8 text-center">
+          Loading product details...
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="container mx-auto px-4 py-8 text-center text-red-600">
+          Error: {error}
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -167,7 +210,7 @@ export default function ProductDetailPage() {
             {/* Thumbnail Images */}
             {product.images.length > 1 && (
               <div className="flex space-x-2">
-                {product.images.map((image, index) => (
+                {product.images.map((image: string, index: number) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
@@ -504,8 +547,11 @@ export default function ProductDetailPage() {
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedProducts.map((relatedProduct) => (
-                <ProductCard key={relatedProduct.id} product={relatedProduct} />
+              {relatedProducts.map((relatedProduct: Product) => (
+                <ProductCard 
+                  key={relatedProduct.id} 
+                  product={relatedProduct}
+                />
               ))}
             </div>
           </div>
