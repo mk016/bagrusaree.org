@@ -15,6 +15,8 @@ import { CartSidebar } from '@/components/cart/cart-sidebar';
 import { API_ENDPOINTS } from '@/lib/constants';
 import { getAllProducts } from '@/lib/data';
 import { Product } from '@/lib/types';
+import { FloatingWhatsApp } from '@/components/ui/floating-whatsapp';
+import Link from 'next/link';
 
 // Define the Category type
 interface Subcategory {
@@ -32,13 +34,16 @@ interface Category {
 
 export default function CategoryPage() {
   const { categorySlug } = useParams();
-  const [sortBy, setSortBy] = useState('newest');
+  const [sortBy, setSortBy] = useState('featured');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryLoading, setCategoryLoading] = useState(true);
+  const [subcategories, setSubcategories] = useState<string[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -80,34 +85,48 @@ export default function CategoryPage() {
     return categories.find(cat => cat.slug === categorySlug);
   }, [categories, categorySlug, categoryLoading]);
   
-  const categoryProducts = useMemo(() => {
-    if (!category || loading || error) return [];
-    
-    let filtered = products.filter((product: Product) => product.category === categorySlug);
+  useEffect(() => {
+    let filtered = products.filter(product => product.category === categorySlug);
+
+    // Get unique subcategories for this category
+    const categorySubcategories = Array.from(new Set(
+      filtered
+        .map(p => p.subcategory)
+        .filter(Boolean)
+    )) as string[];
+    setSubcategories(categorySubcategories);
+
+    // Filter by subcategory if selected
+    if (selectedSubcategory !== 'all') {
+      filtered = filtered.filter(product => product.subcategory === selectedSubcategory);
+    }
 
     // Sort products
     switch (sortBy) {
       case 'price-low':
-        filtered.sort((a: Product, b: Product) => a.price - b.price);
+        filtered.sort((a, b) => (a.comparePrice || a.price) - (b.comparePrice || b.price));
         break;
       case 'price-high':
-        filtered.sort((a: Product, b: Product) => b.price - a.price);
+        filtered.sort((a, b) => (b.comparePrice || b.price) - (a.comparePrice || a.price));
         break;
       case 'name':
-        filtered.sort((a: Product, b: Product) => a.name.localeCompare(b.name));
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case 'newest':
+        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
+      case 'featured':
       default:
-        filtered.sort((a: Product, b: Product) => {
-          const aDate = a.createdAt ? (typeof a.createdAt === 'string' ? new Date(a.createdAt) : a.createdAt) : new Date(0);
-          const bDate = b.createdAt ? (typeof b.createdAt === 'string' ? new Date(b.createdAt) : b.createdAt) : new Date(0);
-          return bDate.getTime() - aDate.getTime();
+        filtered.sort((a, b) => {
+          if (a.featured && !b.featured) return -1;
+          if (!a.featured && b.featured) return 1;
+          return 0;
         });
         break;
     }
 
-    return filtered;
-  }, [categorySlug, sortBy, products, category, loading, error]);
+    setFilteredProducts(filtered);
+  }, [products, categorySlug, selectedSubcategory, sortBy]);
 
   if (loading || categoryLoading) {
     return (
@@ -152,6 +171,7 @@ export default function CategoryPage() {
     <div className="min-h-screen bg-white">
       <Header />
       <CartSidebar />
+      <FloatingWhatsApp />
 
       {/* Category Hero */}
       <div className="bg-gray-900 text-white py-16">
@@ -185,7 +205,7 @@ export default function CategoryPage() {
         {/* Toolbar */}
         <div className="flex items-center justify-between mb-6">
           <div className="text-sm text-gray-600">
-            {categoryProducts.length} products found
+            {filteredProducts.length} products found
           </div>
 
           <div className="flex items-center space-x-4">
@@ -195,7 +215,8 @@ export default function CategoryPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="featured">Featured</SelectItem>
+                <SelectItem value="newest">Newest</SelectItem>
                 <SelectItem value="price-low">Price: Low to High</SelectItem>
                 <SelectItem value="price-high">Price: High to Low</SelectItem>
                 <SelectItem value="name">Name: A to Z</SelectItem>
@@ -225,7 +246,7 @@ export default function CategoryPage() {
         </div>
 
         {/* Products Grid */}
-        {categoryProducts.length === 0 ? (
+        {filteredProducts.length === 0 ? (
           <div className="text-center py-12">
             <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
             <p className="text-gray-600 mb-4">
@@ -235,10 +256,10 @@ export default function CategoryPage() {
         ) : (
           <div className={
             viewMode === 'grid' 
-              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+              ? 'grid grid-cols-2 gap-3 sm:gap-6'
               : 'space-y-4'
           }>
-            {categoryProducts.map(product => (
+            {filteredProducts.map(product => (
               <ProductCard 
                 key={product.id} 
                 product={product}

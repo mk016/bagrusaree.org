@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import { Search, Filter, Grid, List } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Search, Filter, Grid, List, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,6 +18,7 @@ import { CartSidebar } from '@/components/cart/cart-sidebar';
 import { CATEGORIES } from '@/lib/constants';
 import { getProducts } from '@/lib/product-data';
 import { Product, ProductCategoryType } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
 
 export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,24 +29,20 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch products from Google Sheet via getProducts
+  // Fetch products immediately without loading states
   useEffect(() => {
-    const fetchAndSetProducts = async () => {
+    const fetchProducts = async () => {
       try {
         const fetchedProducts = await getProducts();
         setProducts(fetchedProducts);
       } catch (e: any) {
-        setError(e.message);
         console.error("Fetching error:", e);
-      } finally {
-        setLoading(false);
+        // Fail silently and continue with empty array
+        setProducts([]);
       }
     };
-
-    fetchAndSetProducts();
+    fetchProducts();
   }, []);
 
   // All tags from products
@@ -192,7 +189,6 @@ export default function ProductsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all-categories">All Categories</SelectItem>
-            {/* Use CATEGORIES from constants or dynamically generated allCategories if CATEGORIES is empty */}
             {(CATEGORIES.length > 0 ? CATEGORIES : allCategories.map((cat: string) => ({ id: cat, slug: cat, name: cat }))).map(
               (category) => (
                 <SelectItem key={category.id} value={category.slug}>
@@ -220,37 +216,30 @@ export default function ProductsPage() {
       </div>
 
       {/* Tags Filter */}
-      <div>
-        <Label className="text-sm font-medium mb-2 block">Tags</Label>
-        <div className="flex flex-wrap gap-2">
-          {allTags.map((tag) => (
-            <div key={tag} className="flex items-center space-x-2">
-              <Checkbox
-                id={tag}
-                checked={selectedTags.includes(tag)}
-                onCheckedChange={() => handleTagToggle(tag)}
-              />
-              <Label htmlFor={tag} className="text-sm">
+      {allTags.length > 0 && (
+        <div>
+          <Label className="text-sm font-medium mb-2 block">Tags</Label>
+          <div className="flex flex-wrap gap-2">
+            {allTags.map((tag) => (
+              <Badge
+                key={tag}
+                variant={selectedTags.includes(tag) ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => handleTagToggle(tag)}
+              >
                 {tag}
-              </Label>
-            </div>
-          ))}
+              </Badge>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <Button onClick={clearFilters} variant="outline" className="w-full">
+      {/* Clear Filters */}
+      <Button variant="outline" onClick={clearFilters} className="w-full">
         Clear All Filters
       </Button>
     </div>
   );
-
-  if (loading) {
-    return <div className="p-8 text-center">Loading products...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -351,7 +340,7 @@ export default function ProductsPage() {
                       <div
                         className={
                           viewMode === 'grid'
-                            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
+                            ? 'grid grid-cols-2 gap-2 sm:gap-4'
                             : 'space-y-4'
                         }
                       >

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, ShoppingCart, Star, Eye } from 'lucide-react';
@@ -17,8 +17,9 @@ interface ProductCardProps {
   className?: string;
 }
 
-export function ProductCard({ product, className }: ProductCardProps) {
+function ProductCard({ product, className }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const router = useRouter();
   const { addItem: addToCart } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
@@ -41,13 +42,11 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Add to cart first
     addToCart({
       productId: product.id,
       product,
       quantity: 1,
     });
-    // Then redirect to checkout
     router.push('/checkout');
   };
 
@@ -58,7 +57,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
       removeFromWishlist(product.id);
     } else {
       addToWishlist({
-        userId: '1', // This would come from auth
+        userId: '1',
         productId: product.id,
         product,
       });
@@ -68,13 +67,17 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const handleQuickView = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Quick view functionality would go here
   };
+
+  // Fallback image
+  const fallbackImage = 'https://placehold.co/400x400?text=Image+Not+Available';
+  const primaryImage = product.images?.[0] || fallbackImage;
+  const secondaryImage = product.images?.[1];
 
   return (
     <Card 
       className={cn(
-        "group relative overflow-hidden transition-all duration-300 hover:shadow-lg bg-white",
+        "group relative overflow-hidden transition-all duration-300 hover:shadow-lg bg-white border-0 shadow-sm",
         className
       )}
       onMouseEnter={() => setIsHovered(true)}
@@ -85,81 +88,85 @@ export function ProductCard({ product, className }: ProductCardProps) {
         <Link href={`/products/${product.id}`}>
           <div className="aspect-[3/4] relative cursor-pointer">
             <Image
-              src={product.images[0]}
+              src={imageError ? fallbackImage : primaryImage}
               alt={product.name}
-              width={500}
-              height={500}
+              width={400}
+              height={533}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+              onError={() => setImageError(true)}
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
             />
-            {product.images[1] && (
+            {secondaryImage && !imageError && (
               <Image
-                src={product.images[1]}
+                src={secondaryImage}
                 alt={product.name}
-                width={500}
-                height={500}
+                width={400}
+                height={533}
                 className={cn(
                   "absolute inset-0 h-full w-full object-cover transition-opacity duration-300",
                   isHovered ? "opacity-100" : "opacity-0"
                 )}
+                loading="lazy"
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
               />
             )}
           </div>
         </Link>
 
-        {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col space-y-1 pointer-events-none">
-          {product.featured && (
-            <Badge variant="secondary" className="text-xs bg-white text-gray-900">
-              Featured
-            </Badge>
-          )}
+        {/* Badges - Top Left */}
+        <div className="absolute top-3 left-3 flex flex-col space-y-2 pointer-events-none z-10">
+          {/* Sale Badge */}
           {discountPercentage > 0 && (
-            <Badge variant="destructive" className="text-xs">
-              -{discountPercentage}%
-            </Badge>
+            <div className="bg-black text-white text-xs font-medium px-2 py-1 rounded-none">
+              Sale
+            </div>
           )}
-          {product.stock < 5 && (
-            <Badge variant="outline" className="text-xs bg-white text-orange-600 border-orange-600">
-              Low Stock
-            </Badge>
+          
+          {/* Sold Out Badge */}
+          {product.stock === 0 && (
+            <div className="bg-gray-600 text-white text-xs font-medium px-2 py-1 rounded-none">
+              Sold Out
+            </div>
+          )}
+          
+          {/* Featured Badge */}
+          {product.featured && product.stock > 0 && discountPercentage === 0 && (
+            <div className="bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded-none">
+              Featured
+            </div>
           )}
         </div>
 
-        {/* Action Buttons - Outside of Link */}
+        {/* Wishlist Button - Top Right */}
         <div className={cn(
-          "absolute top-2 right-2 flex flex-col space-y-1 transition-opacity duration-300",
+          "absolute top-3 right-3 transition-opacity duration-300",
           isHovered ? "opacity-100" : "opacity-0"
         )}>
           <Button
             variant="secondary"
             size="sm"
-            className="h-8 w-8 p-0 bg-white hover:bg-gray-100"
+            className="h-8 w-8 p-0 bg-white/90 hover:bg-white border-0 shadow-sm"
             onClick={handleWishlistToggle}
           >
             <Heart 
               className={cn(
                 "h-4 w-4",
-                isWishlisted && "fill-red-500 text-red-500"
+                isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"
               )}
             />
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-8 w-8 p-0 bg-white hover:bg-gray-100"
-            onClick={handleQuickView}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
         </div>
 
-        {/* Quick Actions - Outside of Link */}
+        {/* Quick Actions on Hover */}
         <div className={cn(
-          "absolute bottom-2 left-2 right-2 transition-all duration-300 space-y-2",
+          "absolute bottom-3 left-3 right-3 transition-all duration-300 space-y-2",
           isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
         )}>
           <Button
-            className="w-full bg-white text-gray-900 hover:bg-gray-100"
+            className="w-full bg-black text-white hover:bg-gray-800 text-sm font-medium"
             size="sm"
             onClick={handleAddToCart}
             disabled={product.stock === 0}
@@ -169,7 +176,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </Button>
           <Button
             variant="outline"
-            className="w-full bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
+            className="w-full bg-white border-black text-black hover:bg-gray-50 text-sm font-medium"
             size="sm"
             onClick={handleBuyNow}
             disabled={product.stock === 0}
@@ -179,15 +186,39 @@ export function ProductCard({ product, className }: ProductCardProps) {
         </div>
       </div>
 
-      {/* Product Info - Clickable */}
+      {/* Product Info */}
       <Link href={`/products/${product.id}`}>
         <CardContent className="p-4 bg-white cursor-pointer">
-          <div className="space-y-2">
-            <h3 className="font-medium leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors">
+          <div className="space-y-3">
+            {/* Product Title */}
+            <h3 className="font-medium text-gray-900 leading-tight line-clamp-2 group-hover:text-gray-700 transition-colors text-center uppercase tracking-wide text-sm">
               {product.name}
             </h3>
             
-            <div className="flex items-center space-x-1">
+            {/* Price Section */}
+            <div className="text-center space-y-1">
+              {/* Original and Sale Price */}
+              <div className="flex items-center justify-center space-x-2">
+                {product.comparePrice && (
+                  <span className="text-sm text-gray-500 line-through">
+                    Rs. {product.comparePrice.toLocaleString()}.00
+                  </span>
+                )}
+                <span className="text-lg font-semibold text-gray-900">
+                  Rs. {product.price.toLocaleString()}.00
+                </span>
+              </div>
+              
+              {/* Save Percentage */}
+              {discountPercentage > 0 && (
+                <div className="text-red-600 text-sm font-medium">
+                  Save {discountPercentage}%
+                </div>
+              )}
+            </div>
+            
+            {/* Star Rating */}
+            <div className="flex items-center justify-center space-x-1">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
@@ -199,34 +230,13 @@ export function ProductCard({ product, className }: ProductCardProps) {
               ))}
               <span className="text-xs text-gray-500 ml-1">(24)</span>
             </div>
-
-            <div className="flex items-center space-x-2">
-              <span className="font-semibold text-lg">
-                ₹{product.price.toLocaleString()}
-              </span>
-              {product.comparePrice && (
-                <span className="text-sm text-gray-500 line-through">
-                  ₹{product.comparePrice.toLocaleString()}
-                </span>
-              )}
-            </div>
-
-            {product.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {product.tags.slice(0, 2).map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="outline"
-                    className="text-xs bg-white"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            )}
           </div>
         </CardContent>
       </Link>
     </Card>
   );
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export { ProductCard };
+export default memo(ProductCard);

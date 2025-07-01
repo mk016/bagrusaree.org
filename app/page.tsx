@@ -24,38 +24,58 @@ const statsIcons = {
   'years': TrendingUp,
 };
 
+// Default/fallback data that shows immediately
+const DEFAULT_STATS = [
+  { label: 'Happy Customers', value: '50,000+', icon: Users },
+  { label: 'Products Sold', value: '100,000+', icon: ShoppingCart },
+  { label: 'Customer Rating', value: '4.9/5', icon: Star },
+  { label: 'Years of Trust', value: '10+', icon: TrendingUp },
+];
+
+const DEFAULT_BANNERS: Banner[] = [
+  {
+    id: '1',
+    order: 0,
+    title: 'Discover Authentic Indian Fashion',
+    description: 'Explore our exquisite collection',
+    image: '/assets/Banner/Banner1.webp',
+    imageId: 'default-1',
+    imageName: 'Banner1.webp',
+    link: '/products',
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: 'system'
+  }
+];
+
 export default function Home() {
-  // Default stats that will be replaced with API data
-  const [stats, setStats] = useState([
-    { label: 'Happy Customers', value: '50,000+', icon: Users },
-    { label: 'Products Sold', value: '100,000+', icon: ShoppingCart },
-    { label: 'Customer Rating', value: '4.9/5', icon: Star },
-    { label: 'Years of Trust', value: '10+', icon: TrendingUp },
-  ]);
+  const [stats, setStats] = useState(DEFAULT_STATS);
   const [currentImage, setCurrentImage] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [banners, setBanners] = useState<Banner[]>(DEFAULT_BANNERS);
 
-  // Fetch data on component mount
+  // Progressive data loading - each section loads independently
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [productsData, categoriesData, bannersData, statsData] = await Promise.all([
-          getAllProducts(),
-          getCategories(),
-          getBanners(),
-          fetch('/api/stats').then(res => res.json())
-        ]);
-        
-        setProducts(productsData);
-        setCategories(categoriesData);
-        setBanners(bannersData);
-        
-        // Map stats with icons
+    // Load banners first (lightweight)
+    getBanners()
+      .then(data => {
+        if (data && data.length > 0) {
+          setBanners(data);
+        }
+      })
+      .catch(console.error);
+
+    // Load categories (lightweight)
+    getCategories()
+      .then(setCategories)
+      .catch(console.error);
+
+    // Load stats (lightweight)
+    fetch('/api/stats')
+      .then(res => res.json())
+      .then(statsData => {
         if (Array.isArray(statsData)) {
           const statsWithIcons = statsData.map(stat => ({
             ...stat,
@@ -63,20 +83,18 @@ export default function Home() {
           }));
           setStats(statsWithIcons);
         }
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load data. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
+      })
+      .catch(console.error);
 
-    fetchData();
+    // Load products last (heavier) - don't block UI
+    getAllProducts()
+      .then(setProducts)
+      .catch(console.error);
   }, []);
 
   // Banner rotation
   useEffect(() => {
-    if (banners.length === 0) return;
+    if (banners.length <= 1) return;
     
     const timer = setInterval(() => {
       setCurrentImage((prev) => (prev + 1) % banners.length);
@@ -103,45 +121,13 @@ export default function Home() {
     return acc;
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col">
-        <Header />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col">
-        <Header />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center max-w-md mx-auto p-6">
-            <div className="text-red-500 text-5xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>
-            <p className="text-gray-600 mb-6">{error}</p>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <CartSidebar />
       <FloatingWhatsApp />
 
-      {/* Hero Section */}
+      {/* Hero Section - Shows immediately */}
       <section className="relative h-[400px] sm:h-[500px] md:h-[600px] overflow-hidden flex items-center">
         <div className="absolute inset-0">
           {banners.length > 0 ? (
@@ -180,7 +166,7 @@ export default function Home() {
                 ethnic wear crafted with love and precision.
               </p>
               <div className="flex flex-col xs:flex-row gap-3 sm:gap-4 w-full">
-                <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 w-full xs:w-auto" asChild>
+                <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 w-30 xs:w-auto" asChild>
                   <Link href="/products">
                     Shop Now
                     <ArrowRight className="ml-2 h-5 w-5" />
@@ -217,7 +203,7 @@ export default function Home() {
         )}
       </section>
 
-      {/* Stats Section */}
+      {/* Stats Section - Shows immediately */}
       <section className="py-10 sm:py-14 md:py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8">
@@ -236,7 +222,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Categories */}
+      {/* Featured Categories - Shows when available */}
       {featuredCategories.length > 0 && (
         <section className="py-10 sm:py-14 md:py-16 bg-white">
           <div className="container mx-auto px-4">
@@ -250,7 +236,7 @@ export default function Home() {
               </p>
             </div>
             
-            <div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 gap-3 sm:gap-6">
               {featuredCategories.map((category) => (
                 <Link key={category.id} href={`/category/${category.slug}`}>
                   <Card className="group cursor-pointer overflow-hidden hover:shadow-lg transition-all duration-300 bg-white">
@@ -262,7 +248,7 @@ export default function Home() {
                       />
                       <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <h3 className="text-white text-base sm:text-lg font-semibold text-center">
+                        <h3 className="text-white text-sm sm:text-lg font-semibold text-center px-2">
                           {category.name}
                         </h3>
                       </div>
@@ -275,7 +261,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* Trending Products */}
+      {/* Trending Products - Shows when available */}
       {trendingProducts.length > 0 && (
         <section className="py-10 sm:py-14 md:py-16 bg-gray-50">
           <div className="container mx-auto px-4">
@@ -296,7 +282,7 @@ export default function Home() {
               </Button>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 gap-3 sm:gap-6">
               {trendingProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -305,7 +291,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* Products by Category */}
+      {/* Products by Category - Shows when available */}
       {productsByCategory.map((data) => (
         <section key={data.category.id} className="py-10 sm:py-14 md:py-16 bg-white">
           <div className="container mx-auto px-4">
@@ -326,7 +312,7 @@ export default function Home() {
               </Button>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 gap-3 sm:gap-6">
               {data.products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

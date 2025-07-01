@@ -13,40 +13,40 @@ import { API_ENDPOINTS } from '@/lib/constants';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Product, Category, Subcategory } from '@/lib/types';
-import { getAllProducts } from '@/lib/data';
+import { getAllProducts, getCategories } from '@/lib/data';
+import { FloatingWhatsApp } from '@/components/ui/floating-whatsapp';
 
 export default function SubcategoryPage() {
   const params = useParams();
   const categorySlug = params?.categorySlug as string;
   const subcategorySlug = params?.subcategorySlug as string;
   
-  const [sortBy, setSortBy] = useState('newest');
+  const [sortBy, setSortBy] = useState('featured');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isLoading, setIsLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const loadData = async () => {
       try {
-        // Fetch categories
-        const categoriesResponse = await fetch(API_ENDPOINTS.CATEGORIES);
-        if (categoriesResponse.ok) {
-          const categoriesData = await categoriesResponse.json();
-          setCategories(categoriesData);
-        }
-        
-        // Fetch products
-        const fetchedProducts = await getAllProducts();
-        setProducts(fetchedProducts);
+        const [productsData, categoriesData] = await Promise.all([
+          getAllProducts(),
+          getCategories()
+        ]);
+        setProducts(productsData);
+        setCategories(categoriesData);
       } catch (error) {
-        console.error("Failed to fetch data:", error);
+        console.error('Error loading data:', error);
+        setProducts([]);
+        setCategories([]);
       } finally {
         setIsLoading(false);
       }
     };
-    
-    fetchData();
+
+    loadData();
   }, []);
 
   const category = useMemo(() => 
@@ -59,44 +59,54 @@ export default function SubcategoryPage() {
     [category, subcategorySlug]
   );
 
-  const subcategoryProducts = useMemo(() => {
-    if (!categorySlug || !subcategorySlug || !products.length) return [];
-
+  useEffect(() => {
     let filtered = products.filter(product => 
-      product.category === categorySlug && product.subcategory === subcategorySlug
+      product.category === categorySlug && 
+      product.subcategory?.toLowerCase().replace(/\s+/g, '-') === subcategorySlug
     );
 
     // Sort products
     switch (sortBy) {
       case 'price-low':
-        filtered.sort((a, b) => a.price - b.price);
+        filtered.sort((a, b) => (a.comparePrice || a.price) - (b.comparePrice || b.price));
         break;
       case 'price-high':
-        filtered.sort((a, b) => b.price - a.price);
+        filtered.sort((a, b) => (b.comparePrice || b.price) - (a.comparePrice || a.price));
         break;
       case 'name':
         filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case 'newest':
+        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
+      case 'featured':
       default:
         filtered.sort((a, b) => {
-          const aDate = a.createdAt ? (typeof a.createdAt === 'string' ? new Date(a.createdAt) : a.createdAt) : new Date(0);
-          const bDate = b.createdAt ? (typeof b.createdAt === 'string' ? new Date(b.createdAt) : b.createdAt) : new Date(0);
-          return bDate.getTime() - aDate.getTime();
+          if (a.featured && !b.featured) return -1;
+          if (!a.featured && b.featured) return 1;
+          return 0;
         });
         break;
     }
 
-    return filtered;
-  }, [categorySlug, subcategorySlug, sortBy, products]);
+    setFilteredProducts(filtered);
+  }, [products, categorySlug, subcategorySlug, sortBy]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white flex flex-col">
         <Header />
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-        </div>
+        <CartSidebar />
+        <FloatingWhatsApp />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="text-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+            </div>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
@@ -105,113 +115,87 @@ export default function SubcategoryPage() {
     notFound();
   }
 
+  const subcategoryName = subcategory.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <CartSidebar />
+      <FloatingWhatsApp />
 
-      {/* Breadcrumb */}
-      <div className="bg-gray-50 py-4">
-        <div className="container mx-auto px-4">
-          <nav className="flex items-center space-x-2 text-sm text-gray-600">
-            <Link href="/" className="hover:text-indigo-600 transition-colors">
-              Home
-            </Link>
-            <span>/</span>
-            <Link 
-              href={`/category/${categorySlug}`} 
-              className="hover:text-indigo-600 transition-colors"
-            >
-              {category.name}
-            </Link>
-            <span>/</span>
-            <span className="text-gray-900">{subcategory.name}</span>
-          </nav>
-        </div>
-      </div>
-
-      {/* Subcategory Hero */}
-      <div className="bg-gray-900 text-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl">
-            <h1 className="text-4xl font-bold mb-4">{subcategory.name}</h1>
-            <p className="text-xl text-gray-300">
-              Explore our curated collection of {subcategory.name.toLowerCase()} from the {category.name.toLowerCase()} category.
+      <main className="flex-1">
+        {/* Breadcrumb and Header */}
+        <div className="bg-gray-50 py-12">
+          <div className="container mx-auto px-4">
+            <nav className="text-sm text-gray-600 mb-4">
+              <Link href="/" className="hover:text-gray-900">Home</Link>
+              <span className="mx-2">/</span>
+              <Link href={`/category/${categorySlug}`} className="hover:text-gray-900">
+                {category.name}
+              </Link>
+              <span className="mx-2">/</span>
+              <span className="text-gray-900">{subcategoryName}</span>
+            </nav>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              {subcategoryName}
+            </h1>
+            <p className="text-gray-600">
+              Explore our collection of {subcategoryName.toLowerCase()} from our {category.name} range
             </p>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="text-sm text-gray-600">
-            {subcategoryProducts.length} product{subcategoryProducts.length !== 1 ? 's' : ''} found
-          </div>
+        <div className="container mx-auto px-4 py-8">
+          {/* Controls */}
+          <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
+            <div className="text-gray-600 text-sm">
+              {filteredProducts.length} products
+            </div>
 
-          <div className="flex items-center space-x-4">
             {/* Sort */}
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="featured">Featured</SelectItem>
+                <SelectItem value="newest">Newest</SelectItem>
                 <SelectItem value="price-low">Price: Low to High</SelectItem>
                 <SelectItem value="price-high">Price: High to Low</SelectItem>
                 <SelectItem value="name">Name: A to Z</SelectItem>
               </SelectContent>
             </Select>
+          </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex border rounded-lg">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                className="rounded-r-none"
-              >
-                <Grid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="rounded-l-none"
-              >
-                <List className="h-4 w-4" />
-              </Button>
+          {/* Products Grid */}
+          {filteredProducts.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 sm:gap-6">
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-12">
+              <h3 className="text-xl font-medium text-gray-900 mb-2">
+                No products found
+              </h3>
+              <p className="text-gray-600 mb-4">
+                We don't have any products in this subcategory yet.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button asChild>
+                  <Link href={`/category/${categorySlug}`}>
+                    Browse {category.name}
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href="/products">Browse All Products</Link>
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* Products Grid */}
-        {subcategoryProducts.length === 0 ? (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-600 mb-4">
-              Check back soon for new arrivals in this subcategory.
-            </p>
-            <Button onClick={() => window.history.back()}>
-              Back to {category.name}
-            </Button>
-          </div>
-        ) : (
-          <div className={
-            viewMode === 'grid' 
-              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-              : 'space-y-4'
-          }>
-            {subcategoryProducts.map(product => (
-              <ProductCard 
-                key={product.id} 
-                product={product}
-                className={viewMode === 'list' ? 'flex flex-row' : ''}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      </main>
 
       <Footer />
     </div>

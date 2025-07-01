@@ -5,12 +5,27 @@ import { auth } from "@clerk/nextjs/server";
 // Ensure this route is not statically analyzed
 export const dynamic = 'force-dynamic';
 
+// Simple in-memory cache for better performance
+const cache = new Map();
+const CACHE_TTL = 60000; // 1 minute cache
+
 // GET all products
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const category = url.searchParams.get("category");
     const featured = url.searchParams.get("featured") === "true";
+    const limit = parseInt(url.searchParams.get("limit") || "50");
+    const offset = parseInt(url.searchParams.get("offset") || "0");
+    
+    // Create cache key
+    const cacheKey = `products_${category || 'all'}_${featured}_${limit}_${offset}`;
+    
+    // Check cache first
+    const cached = cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return NextResponse.json(cached.data);
+    }
     
     // Build query based on parameters
     const query: any = {};
@@ -19,12 +34,14 @@ export async function GET(req: NextRequest) {
       query.category = category;
     }
     
-    // Get products from database with filters
+    // Get products from database with filters and pagination
     const products = await prisma.products.findMany({
       where: query,
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: Math.min(limit, 100), // Maximum 100 products per request
+      skip: offset
     });
     
     // Map database fields to frontend expected fields
@@ -39,11 +56,17 @@ export async function GET(req: NextRequest) {
       tags: product.tags || [],
       stock: product.weight || 0,
       sku: product.id.substring(0, 8).toUpperCase(),
-      featured: featured ? true : Math.random() > 0.7, // Mock featured status if not specified
+      featured: featured ? product.isAvailable : false, // Simple featured logic
       status: product.isAvailable ? 'active' : 'draft',
       createdAt: product.createdAt,
       updatedAt: product.updatedOn,
     }));
+    
+    // Cache the result
+    cache.set(cacheKey, {
+      data: formattedProducts,
+      timestamp: Date.now()
+    });
     
     return NextResponse.json(formattedProducts);
   } catch (error) {
@@ -87,6 +110,9 @@ export async function POST(req: NextRequest) {
       }
     });
 
+    // Clear cache when new product is added
+    cache.clear();
+
     // Format response to match frontend expected format
     const formattedProduct = {
       id: product.id,
@@ -99,7 +125,7 @@ export async function POST(req: NextRequest) {
       tags: product.tags || [],
       stock: product.weight || 0,
       sku: product.id.substring(0, 8).toUpperCase(),
-      featured: false,
+      featured: data.featured || false,
       status: product.isAvailable ? 'active' : 'draft',
       createdAt: product.createdAt,
       updatedAt: product.updatedOn,
