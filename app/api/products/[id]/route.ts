@@ -1,79 +1,205 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
 
-// GET a single product by ID
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+// GET a specific product
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id } = params;
+    const id = params.id;
+    
+    // Get product from database
     const product = await prisma.products.findUnique({
-      where: { id: id },
+      where: {
+        id
+      }
     });
+    
     if (!product) {
-      return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: "Product not found" },
+        { status: 404 }
+      );
     }
-    // Map imagesUrl to images for frontend compatibility
+    
+    // Format response to match frontend expected format
     const formattedProduct = {
-      ...product,
-      images: product.imagesUrl || [], // Ensure images is always an array
-      price: product.sellingPrice, // Map sellingPrice to price
-      category: product.category, // Use the correct field name (category)
-      status: product.isAvailable ? 'active' : 'draft', // Map isAvailable to status
-      // sku: product.sku, // If SKU is still in Prisma, uncomment and map it
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: parseFloat(product.sellingPrice.toString()),
+      images: product.imagesUrl || [],
+      category: product.category,
+      subcategory: product.subcategory || undefined,
+      tags: product.tags || [],
+      stock: product.weight || 0,
+      sku: product.id.substring(0, 8).toUpperCase(),
+      featured: Math.random() > 0.7, // Mock featured status
+      status: product.isAvailable ? 'active' : 'draft',
+      createdAt: product.createdAt,
+      updatedAt: product.updatedOn,
     };
+    
     return NextResponse.json(formattedProduct);
-  } catch (error: any) {
-    console.error(`Error fetching product with ID ${params.id}:`, error.message, error.stack, error);
-    return NextResponse.json({ message: 'Failed to fetch product', error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    return NextResponse.json(
+      { error: "Error fetching product" },
+      { status: 500 }
+    );
   }
 }
 
-// PUT (update) a product by ID
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+// UPDATE a product
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id } = params;
-    const data = await request.json();
-    console.log(`Received data for updating product ${id}:`, data); // Log incoming data
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    
+    const id = params.id;
+    const data = await req.json();
+    
+    // Check if product exists
+    const existingProduct = await prisma.products.findUnique({
+      where: {
+        id
+      }
+    });
+    
+    if (!existingProduct) {
+      return NextResponse.json(
+        { error: "Product not found" },
+        { status: 404 }
+      );
+    }
 
+    // Map Product type to database schema for update
     const updatedProduct = await prisma.products.update({
-      where: { id: id },
-      data: {
-        name: data.name,
-        description: data.description,
-        sellingPrice: data.price, // Map price from frontend to sellingPrice for database
-        imagesUrl: data.images || [], // Map images from frontend to imagesUrl for database, ensure array
-        category: data.category, // Use the correct field name (category)
-        tags: data.tags || [],
-        weight: data.weight || null,
-        isAvailable: data.status === 'active',
-        updatedOn: new Date(), // Set updatedOn explicitly for update
+      where: {
+        id
       },
+      data: {
+        name: data.name || existingProduct.name,
+        description: data.description || existingProduct.description,
+        sellingPrice: data.price !== undefined ? data.price : existingProduct.sellingPrice, // Map price to sellingPrice
+        imagesUrl: data.images || existingProduct.imagesUrl, // Map images to imagesUrl
+        category: data.category || existingProduct.category,
+        subcategory: data.subcategory || existingProduct.subcategory,
+        tags: data.tags || existingProduct.tags,
+        weight: data.stock !== undefined ? data.stock : existingProduct.weight, // Map stock to weight
+        isAvailable: data.status ? data.status === 'active' : existingProduct.isAvailable, // Map status to isAvailable
+        updatedOn: new Date(),
+      }
     });
-    // Format the returned product to match the frontend Product interface
+    
+    // Format response to match frontend expected format
     const formattedProduct = {
-      ...updatedProduct,
-      images: updatedProduct.imagesUrl,
-      price: updatedProduct.sellingPrice,
-      category: updatedProduct.category, // Use the correct field name (category)
+      id: updatedProduct.id,
+      name: updatedProduct.name,
+      description: updatedProduct.description,
+      price: parseFloat(updatedProduct.sellingPrice.toString()),
+      images: updatedProduct.imagesUrl || [],
+      category: updatedProduct.category,
+      subcategory: updatedProduct.subcategory || undefined,
+      tags: updatedProduct.tags || [],
+      stock: updatedProduct.weight || 0,
+      sku: updatedProduct.id.substring(0, 8).toUpperCase(),
+      featured: data.featured !== undefined ? data.featured : Math.random() > 0.7,
       status: updatedProduct.isAvailable ? 'active' : 'draft',
-      // sku: updatedProduct.sku,
+      createdAt: updatedProduct.createdAt,
+      updatedAt: updatedProduct.updatedOn,
     };
+    
     return NextResponse.json(formattedProduct);
-  } catch (error: any) {
-    console.error(`Error updating product with ID ${params.id}:`, error.message, error.stack, error);
-    return NextResponse.json({ message: 'Failed to update product', error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return NextResponse.json(
+      { error: "Error updating product", details: error },
+      { status: 500 }
+    );
   }
 }
 
-// DELETE a product by ID
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+// DELETE a product
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id } = params;
-    await prisma.products.delete({
-      where: { id: id },
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    
+    const id = params.id;
+    
+    // Check if product exists
+    const existingProduct = await prisma.products.findUnique({
+      where: {
+        id
+      }
     });
-    return NextResponse.json({ message: 'Product deleted successfully' });
-  } catch (error: any) {
-    console.error(`Error deleting product with ID ${params.id}:`, error.message, error.stack, error);
-    return NextResponse.json({ message: 'Failed to delete product', error: error.message }, { status: 500 });
+    
+    if (!existingProduct) {
+      return NextResponse.json(
+        { error: "Product not found" },
+        { status: 404 }
+      );
+    }
+    
+    // Check if product is used in orders
+    const orderItems = await prisma.orderItem.findMany({
+      where: {
+        productId: id
+      }
+    });
+    
+    if (orderItems.length > 0) {
+      // If product is used in orders, just mark it as unavailable
+      await prisma.products.update({
+        where: {
+          id
+        },
+        data: {
+          isAvailable: false
+        }
+      });
+      
+      return NextResponse.json({
+        message: "Product is used in orders. Marked as unavailable instead of deleting."
+      });
+    }
+    
+    // Delete product
+    await prisma.products.delete({
+      where: {
+        id
+      }
+    });
+    
+    return NextResponse.json({
+      message: "Product deleted successfully"
+    });
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    return NextResponse.json(
+      { error: "Error deleting product" },
+      { status: 500 }
+    );
   }
 } 
