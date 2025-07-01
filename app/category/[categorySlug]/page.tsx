@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from 'next/navigation';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Filter, Grid, List, SortAsc } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,39 +14,58 @@ import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
 import { CATEGORIES } from '@/lib/constants';
 import { getAllProducts } from '@/lib/data';
+import { Product } from '@/lib/types';
 
 export default function CategoryPage() {
   const { categorySlug } = useParams();
   const [sortBy, setSortBy] = useState('newest');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const fetchedProducts = await getAllProducts();
+        setProducts(fetchedProducts);
+      } catch (err: any) {
+        console.error("Failed to fetch products for category page:", err);
+        setError("Failed to load products for this category.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   const category = CATEGORIES.find(cat => cat.slug === categorySlug);
-  const allProducts = getAllProducts();
   
   const categoryProducts = useMemo(() => {
-    if (!category) return [];
+    if (!category || loading || error) return [];
     
-    let filtered = allProducts.filter(product => product.category === categorySlug);
+    let filtered = products.filter((product: Product) => product.category === categorySlug);
 
     // Sort products
     switch (sortBy) {
       case 'price-low':
-        filtered.sort((a, b) => a.price - b.price);
+        filtered.sort((a: Product, b: Product) => a.price - b.price);
         break;
       case 'price-high':
-        filtered.sort((a, b) => b.price - a.price);
+        filtered.sort((a: Product, b: Product) => b.price - a.price);
         break;
       case 'name':
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        filtered.sort((a: Product, b: Product) => a.name.localeCompare(b.name));
         break;
       case 'newest':
       default:
-        filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        filtered.sort((a: Product, b: Product) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
         break;
     }
 
     return filtered;
-  }, [categorySlug, sortBy, allProducts, category]);
+  }, [categorySlug, sortBy, products, category, loading, error]);
 
   if (!category) {
     return (
@@ -57,6 +76,30 @@ export default function CategoryPage() {
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Category not found</h1>
             <Button onClick={() => window.history.back()}>Go Back</Button>
           </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="container mx-auto px-4 py-8 text-center">
+          Loading products...
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="container mx-auto px-4 py-8 text-center text-red-600">
+          Error: {error}
         </div>
         <Footer />
       </div>
