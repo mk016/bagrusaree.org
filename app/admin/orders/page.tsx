@@ -38,7 +38,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <AdminLayout>
+  
       <div className="container mx-auto py-8">
         <h1 className="text-3xl font-bold mb-6">Orders Management</h1>
         <Card>
@@ -81,6 +81,6 @@ export default function OrdersPage() {
           </CardContent>
         </Card>
       </div>
-    </AdminLayout>
+
   );
 } 
