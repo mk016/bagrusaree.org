@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import { ImageKitAppProvider } from '@/components/providers/imagekit-provider';
+import { Analytics } from '@vercel/analytics/react';
 
 export const metadata: Metadata = {
   title: 'BagruSarees - Authentic Indian Fashion',
@@ -21,6 +22,7 @@ export default function RootLayout({
           <ImageKitAppProvider>
             {children}
           </ImageKitAppProvider>
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>
