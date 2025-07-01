@@ -1,38 +1,86 @@
-import { generateMockOrders, generateMockUsers, getAllProducts } from '@/lib/data';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { getOrders } from '@/lib/data';
 import { Order } from '@/lib/types';
+import AdminLayout from '@/app/admin/layout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function OrdersPage() {
-  const users = generateMockUsers(10);
-  const products = getAllProducts();
-  const orders: Order[] = generateMockOrders(20, users, products);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const fetchedOrders = await getOrders();
+        setOrders(fetchedOrders);
+        setError(null);
+      } catch (err: any) {
+        console.error("Failed to load orders:", err);
+        setError("Failed to load orders: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div className="container mx-auto py-8 text-center">Loading orders...</div>;
+  }
+
+  if (error) {
+    return <div className="container mx-auto py-8 text-center text-red-600">Error: {error}</div>;
+  }
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Orders Management</h1>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
-          <thead>
-            <tr className="bg-gray-100 border-b">
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => (
-              <tr key={order.id} className="border-b last:border-b-0">
-                <td className="py-3 px-4 text-sm text-gray-800">{order.id}</td>
-                <td className="py-3 px-4 text-sm text-gray-800">{order.user.name}</td>
-                <td className="py-3 px-4 text-sm text-gray-800">${order.total.toFixed(2)}</td>
-                <td className="py-3 px-4 text-sm text-gray-800 capitalize">{order.status}</td>
-                <td className="py-3 px-4 text-sm text-gray-800">{new Date(order.createdAt).toLocaleDateString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <AdminLayout>
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-6">Orders Management</h1>
+        <Card>
+          <CardHeader>
+            <CardTitle>All Orders ({orders.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
+                <thead>
+                  <tr className="bg-gray-100 border-b">
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Customer Name</TableHead>
+                    <TableHead>Customer Email</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                  </tr>
+                </thead>
+                <TableBody>
+                  {orders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-3 px-4 text-sm text-gray-800 text-center">No orders found.</TableCell>
+                    </TableRow>
+                  ) : (
+                    orders.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell className="py-3 px-4 text-sm text-gray-800">{order.id}</TableCell>
+                        <TableCell className="py-3 px-4 text-sm text-gray-800">{order.customer?.fullName || 'N/A'}</TableCell>
+                        <TableCell className="py-3 px-4 text-sm text-gray-800">{order.customer?.email || 'N/A'}</TableCell>
+                        <TableCell className="py-3 px-4 text-sm text-gray-800">₹{order.total.toFixed(2)}</TableCell>
+                        <TableCell className="py-3 px-4 text-sm text-gray-800 capitalize">{order.status}</TableCell>
+                        <TableCell className="py-3 px-4 text-sm text-gray-800">{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </AdminLayout>
   );
 } 
