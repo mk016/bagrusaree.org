@@ -6,17 +6,17 @@ import { ShoppingCart, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { useCartStore, useAuthStore, useWishlistStore } from '@/lib/store';
+import { useCartStore, useWishlistStore } from '@/lib/store';
 import { MegaMenu } from './mega-menu';
 import { UserMenu } from './user-menu';
 import { Input } from '@/components/ui/input';
 import { Heart, Search, User, X } from 'lucide-react';
+import { UserAuthButton } from './user-auth-button';
 
 export function Header() {
   const [isHydrated, setIsHydrated] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { getTotalItems, toggleCart } = useCartStore();
-  const { isAuthenticated } = useAuthStore();
   const { items: wishlistItems } = useWishlistStore();
 
   const totalCartItems = getTotalItems();
@@ -82,18 +82,9 @@ export function Header() {
                       )}
                     </Button>
                   </Link>
-                  {/* User Menu or Login */}
+                  {/* User Auth Button */}
                   <div className="mb-2">
-                    {isHydrated && isAuthenticated ? (
-                      <UserMenu />
-                    ) : (
-                      <Link href="/auth/login">
-                        <Button variant="ghost" size="sm" className="w-full justify-start">
-                          <User className="h-5 w-5 mr-2" />
-                          Login
-                        </Button>
-                      </Link>
-                    )}
+                    <UserAuthButton />
                   </div>
                   {/* Mega Menu */}
                   <div className="mt-4">
@@ -179,17 +170,8 @@ export function Header() {
                   </Badge>
                 )}
               </Button>
-              {/* User Menu */}
-              {isHydrated && isAuthenticated ? (
-                <UserMenu />
-              ) : (
-                <Link href="/auth/login">
-                  <Button variant="ghost" size="sm" aria-label="Login">
-                    <User className="h-5 w-5 mr-2" />
-                    <span className="hidden xs:inline">Login</span>
-                  </Button>
-                </Link>
-              )}
+              {/* User Auth Button */}
+              <UserAuthButton />
             </div>
           </div>
         </div>
