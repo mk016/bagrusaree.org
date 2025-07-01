@@ -8,6 +8,8 @@ export interface User {
   updatedAt: string;
 }
 
+export type ProductCategoryType = 'sarees' | 'suit-sets' | 'dress-material' | 'dupattas' | 'bedsheets' | 'bags' | 'men\'s-collection' | 'home' | 'uncategorized';
+
 export interface Product {
   id: string;
   name: string;
@@ -15,11 +17,11 @@ export interface Product {
   price: number;
   comparePrice?: number;
   images: string[];
-  category: string;
+  category: ProductCategoryType;
   subcategory?: string;
   tags: string[];
   stock: number;
-  sku: string;
+  sku?: string;
   featured: boolean;
   status: 'active' | 'draft' | 'archived';
   seoTitle?: string;
@@ -60,8 +62,8 @@ export interface CartItem {
 
 export interface Order {
   id: string;
-  userId: string;
-  user: User;
+  customerId: string;
+  customer?: Customer;
   items: OrderItem[];
   total: number;
   subtotal: number;
@@ -73,8 +75,8 @@ export interface Order {
   paymentMethod: string;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   trackingNumber?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface OrderItem {
@@ -172,4 +174,29 @@ export interface ContentPage {
   slug: string;
   content: string;
   lastUpdated: string;
+}
+
+export interface Customer {
+  id: string;
+  fullName?: string;
+  displayName?: string;
+  email?: string;
+  isEmailVerified?: boolean;
+  createdAt: string;
+  isActive: boolean;
+  defaultAddressID?: string;
+  defaultAddress?: Address;
+  addresses: Address[];
+  paymentTransactions: PaymentTransaction[];
+  orders: Order[];
+}
+
+// Payment Transaction model to record the users payment 
+export interface PaymentTransaction {
+  id: string;
+  paymentId: string;
+  customerId: string;
+  amount: number;
+  status: string;
+  createdAt: string;
 }
