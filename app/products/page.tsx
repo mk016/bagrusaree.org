@@ -340,7 +340,7 @@ export default function ProductsPage() {
                       <div
                         className={
                           viewMode === 'grid'
-                            ? 'grid grid-cols-2 gap-2 sm:gap-4'
+                            ? 'grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4'
                             : 'space-y-4'
                         }
                       >

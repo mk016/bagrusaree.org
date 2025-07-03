@@ -9,9 +9,8 @@ import {
 } from "@imagekit/next";
 import { useRef, useState, useCallback } from "react";
 import { Button } from "../ui/button";
-import { Progress } from "../ui/progress";
 import { Alert, AlertDescription } from "../ui/alert";
-import { X, Upload, ImageIcon } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 
 interface EnhancedImageUploadProps {
   onUploadSuccess: (imageUrl: string, fileId: string, fileName: string) => void;
@@ -30,8 +29,6 @@ export default function EnhancedImageUpload({
   acceptedFileTypes = "image/*",
   maxSizeMB = 5,
 }: EnhancedImageUploadProps) {
-  const [progress, setProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,8 +78,6 @@ export default function EnhancedImageUpload({
     }
 
     setError(null);
-    setProgress(0);
-    setIsUploading(true);
     
     // Create new abort controller for this upload
     abortController.current = new AbortController();
@@ -93,7 +88,6 @@ export default function EnhancedImageUpload({
       authParams = await authenticator();
     } catch (authError) {
       setError("Failed to authenticate for upload");
-      setIsUploading(false);
       return;
     }
     
@@ -110,10 +104,6 @@ export default function EnhancedImageUpload({
         file,
         fileName: file.name,
         folder: folder || "",
-        // Progress callback to update upload progress state
-        onProgress: (event) => {
-          setProgress((event.loaded / event.total) * 100);
-        },
         // Abort signal to allow cancellation of the upload if needed
         abortSignal: abortController.current.signal,
       });
@@ -143,8 +133,6 @@ export default function EnhancedImageUpload({
         // Handle any other errors that may occur
         setError(`Upload error: ${(error as Error).message || "Unknown error"}`);
       }
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -187,9 +175,7 @@ export default function EnhancedImageUpload({
     }
   }, []);
 
-  const cancelUpload = () => {
-    abortController.current.abort();
-  };
+
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -212,48 +198,25 @@ export default function EnhancedImageUpload({
         onDrop={handleDrop}
       >
         <div className="flex flex-col items-center justify-center space-y-4">
-          {isUploading ? (
-            <>
-              <Upload className="h-10 w-10 text-gray-400 animate-pulse" />
-              <div className="space-y-2 w-full max-w-xs">
-                <Progress value={progress} className="w-full" />
-                <p className="text-sm text-center text-muted-foreground">
-                  Uploading: {Math.round(progress)}%
-                </p>
-                <Button 
-                  variant="outline" 
-                  onClick={cancelUpload} 
-                  type="button"
-                  className="w-full"
-                >
-                  <X className="h-4 w-4 mr-2" /> Cancel Upload
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <ImageIcon className="h-10 w-10 text-gray-400" />
-              <div className="text-center">
-                <p className="text-sm font-medium">
-                  Drag and drop your image here, or
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Supports: {acceptedFileTypes} (Max: {maxSizeMB}MB)
-                </p>
-              </div>
-              <Button onClick={handleUploadClick} type="button">
-                {buttonText}
-              </Button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept={acceptedFileTypes}
-                className="hidden"
-                onChange={handleFileChange}
-                disabled={isUploading}
-              />
-            </>
-          )}
+          <ImageIcon className="h-10 w-10 text-gray-400" />
+          <div className="text-center">
+            <p className="text-sm font-medium">
+              Drag and drop your image here, or
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Supports: {acceptedFileTypes} (Max: {maxSizeMB}MB)
+            </p>
+          </div>
+          <Button onClick={handleUploadClick} type="button">
+            {buttonText}
+          </Button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept={acceptedFileTypes}
+            className="hidden"
+            onChange={handleFileChange}
+          />
         </div>
       </div>
     </div>

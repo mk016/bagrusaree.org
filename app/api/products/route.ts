@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
       name: product.name,
       description: product.description,
       price: parseFloat(product.sellingPrice.toString()),
+      comparePrice: product.comparePrice ? parseFloat(product.comparePrice.toString()) : undefined,
       images: product.imagesUrl || [],
       category: product.category,
       subcategory: product.subcategory || undefined,
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest) {
         name: data.name,
         description: data.description || "",
         sellingPrice: data.price, // Map price to sellingPrice
+        comparePrice: data.comparePrice || null, // Map comparePrice field
         imagesUrl: data.images || [], // Map images to imagesUrl
         category: categoryValue,
         subcategory: data.subcategory || null,
@@ -119,6 +121,7 @@ export async function POST(req: NextRequest) {
       name: product.name,
       description: product.description,
       price: parseFloat(product.sellingPrice.toString()),
+      comparePrice: product.comparePrice ? parseFloat(product.comparePrice.toString()) : undefined,
       images: product.imagesUrl || [],
       category: product.category,
       subcategory: product.subcategory || undefined,

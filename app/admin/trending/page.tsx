@@ -28,7 +28,6 @@ interface TrendingProduct {
 
 export default function TrendingProductsPage() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [trendingProducts, setTrendingProducts] = useState<TrendingProduct[]>([]);
   const { toast } = useToast();
 
@@ -72,8 +71,6 @@ export default function TrendingProductsPage() {
           }));
           setTrendingProducts(initialTrending);
         }
-        
-        setLoading(false);
       } catch (error) {
         console.error("Failed to fetch products:", error);
         toast({
@@ -81,7 +78,6 @@ export default function TrendingProductsPage() {
           description: "Failed to load products. Please try again.",
           variant: "destructive",
         });
-        setLoading(false);
       }
     };
 
@@ -95,7 +91,6 @@ export default function TrendingProductsPage() {
     trending: true,
     order: 1,
   });
-  const [isSaving, setIsSaving] = useState(false);
 
   const handleInputChange = (field: string, value: string | boolean | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -103,7 +98,6 @@ export default function TrendingProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
     
     const selectedProduct = allProducts.find(p => p.id === formData.productId);
     if (!selectedProduct) {
@@ -112,7 +106,6 @@ export default function TrendingProductsPage() {
         description: "Selected product not found",
         variant: "destructive",
       });
-      setIsSaving(false);
       return;
     }
 
@@ -173,7 +166,6 @@ export default function TrendingProductsPage() {
         variant: "destructive",
       });
     } finally {
-      setIsSaving(false);
       // Reset form
       setFormData({
         productId: '',
@@ -257,17 +249,6 @@ export default function TrendingProductsPage() {
     (editingItem && editingItem.productId === product.id)
   );
 
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex flex-col items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
-          <p className="text-gray-600">Loading trending products...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
@@ -347,8 +328,8 @@ export default function TrendingProductsPage() {
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSaving || !formData.productId}>
-                  {isSaving ? 'Saving...' : editingItem ? 'Update Product' : 'Add Product'}
+                <Button type="submit" disabled={!formData.productId}>
+                  {editingItem ? 'Update Product' : 'Add Product'}
                 </Button>
               </div>
             </form>

@@ -51,29 +51,21 @@ function generateMockReviews(count: number, products: Product[]): Review[] {
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
         const products = await getAllProducts();
         const generatedReviews: Review[] = generateMockReviews(20, products);
         setReviews(generatedReviews);
       } catch (err: any) {
         console.error("Failed to load reviews:", err);
         setError("Failed to load reviews.");
-      } finally {
-        setLoading(false);
       }
     };
     fetchData();
   }, []);
-
-  if (loading) {
-    return <div className="container mx-auto py-8 text-center">Loading reviews...</div>;
-  }
 
   if (error) {
     return <div className="container mx-auto py-8 text-center text-red-600">Error: {error}</div>;

@@ -24,6 +24,20 @@ interface ProductFormProps {
   onProductSave: (product: Product) => void;
 }
 
+interface CategoryFormData {
+  name: string;
+  slug: string;
+  description: string;
+}
+
+interface SubcategoryFormData {
+  name: string;
+  slug: string;
+  description: string;
+  categoryId: string;
+  order: number;
+}
+
 export function ProductForm({ product, isEditing = false, onProductSave }: ProductFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState<Product>({
@@ -47,14 +61,12 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
 
   const [images, setImages] = useState<string[]>(product?.images || []);
   const [newTag, setNewTag] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   
   // New category dialog state
   const [isNewCategoryDialogOpen, setIsNewCategoryDialogOpen] = useState(false);
-  const [newCategory, setNewCategory] = useState({
+  const [newCategory, setNewCategory] = useState<CategoryFormData>({
     name: '',
     slug: '',
     description: '',
@@ -62,18 +74,18 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
   
   // New subcategory dialog state
   const [isNewSubcategoryDialogOpen, setIsNewSubcategoryDialogOpen] = useState(false);
-  const [newSubcategory, setNewSubcategory] = useState({
+  const [newSubcategory, setNewSubcategory] = useState<SubcategoryFormData>({
     name: '',
     slug: '',
     description: '',
     categoryId: '',
+    order: 0,
   });
 
   // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        setIsLoadingCategories(true);
         const response = await fetch(API_ENDPOINTS.CATEGORIES);
         if (response.ok) {
           const data = await response.json();
@@ -83,8 +95,6 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
         }
       } catch (err) {
         console.error('Error fetching categories:', err);
-      } finally {
-        setIsLoadingCategories(false);
       }
     };
 
@@ -188,6 +198,8 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
     }
 
     try {
+      console.log('Sending category data:', newCategory);
+      
       const response = await fetch(API_ENDPOINTS.CATEGORIES, {
         method: 'POST',
         headers: {
@@ -196,34 +208,51 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
         body: JSON.stringify(newCategory),
       });
 
+      const result = await response.json();
+      console.log('API response:', result);
+
       if (!response.ok) {
-        throw new Error('Failed to add category');
+        // Handle specific error cases
+        if (response.status === 409) {
+          setError(`Category already exists: ${result.error}`);
+          toast.error(`Category already exists: ${result.error}`);
+        } else if (response.status === 400) {
+          setError(`Invalid data: ${result.error}`);
+          toast.error(`Invalid data: ${result.error}`);
+        } else if (response.status === 503) {
+          setError('Database connection failed. Please try again.');
+          toast.error('Database connection failed. Please try again.');
+        } else {
+          setError(`Failed to add category: ${result.error || result.message}`);
+          toast.error(`Failed to add category: ${result.error || result.message}`);
+        }
+        return;
       }
 
-      const addedCategory = await response.json();
+      const savedCategory = result;
       
       // Update categories list
-      setCategories([...categories, addedCategory]);
+      setCategories(prev => [...prev, savedCategory]);
       
-      // Select the newly added category
-      handleInputChange('category', addedCategory.slug as ProductCategoryType);
+      // Set the new category as selected
+      handleInputChange('category', savedCategory.slug);
       
-      // Reset form and close dialog
-      setNewCategory({ name: '', slug: '', description: '' });
+      // Close dialog and reset form
       setIsNewCategoryDialogOpen(false);
+      setNewCategory({ name: '', slug: '', description: '' });
       
       toast.success('Category added successfully');
-    } catch (err: any) {
-      console.error('Error adding category:', err);
-      setError(err.message || 'Failed to add category');
-      toast.error('Failed to add category');
+    } catch (error: any) {
+      console.error('Category creation error:', error);
+      setError(`Network error: ${error.message}`);
+      toast.error(`Network error: ${error.message}`);
     }
   };
 
   // Add new subcategory
   const handleAddSubcategory = async () => {
-    if (!newSubcategory.name || !newSubcategory.categoryId) {
-      setError('Subcategory name and parent category are required');
+    if (!newSubcategory.name || !newSubcategory.slug || !newSubcategory.categoryId) {
+      setError('Subcategory name and category are required');
       return;
     }
 
@@ -237,6 +266,7 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
           name: newSubcategory.name,
           slug: newSubcategory.slug,
           description: newSubcategory.description,
+          order: newSubcategory.order,
         }),
       });
 
@@ -244,92 +274,69 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
         throw new Error('Failed to add subcategory');
       }
 
-      const addedSubcategory = await response.json();
+      const savedSubcategory = await response.json();
       
-      // Update categories list with new subcategory
-      const updatedCategories = categories.map(category => {
-        if (category.id === newSubcategory.categoryId) {
-          return {
-            ...category,
-            subcategories: [...(category.subcategories || []), addedSubcategory],
-          };
-        }
-        return category;
-      });
+      // Refresh categories to get updated subcategories
+      await refreshCategories();
       
-      setCategories(updatedCategories);
+      // Set the new subcategory as selected
+      handleInputChange('subcategory', savedSubcategory.slug);
       
-      // Select the newly added subcategory
-      handleInputChange('subcategory', addedSubcategory.slug);
-      
-      // Reset form and close dialog
-      setNewSubcategory({ name: '', slug: '', description: '', categoryId: '' });
+      // Close dialog and reset form
       setIsNewSubcategoryDialogOpen(false);
+      setNewSubcategory({ name: '', slug: '', description: '', categoryId: '', order: 0 });
       
       toast.success('Subcategory added successfully');
-    } catch (err: any) {
-      console.error('Error adding subcategory:', err);
-      setError(err.message || 'Failed to add subcategory');
-      toast.error('Failed to add subcategory');
+    } catch (error: any) {
+      setError(error.message);
+      toast.error('Failed to add subcategory: ' + error.message);
     }
   };
 
   // Refresh categories
   const refreshCategories = async () => {
     try {
-      setIsLoadingCategories(true);
       const response = await fetch(API_ENDPOINTS.CATEGORIES);
       if (response.ok) {
         const data = await response.json();
         setCategories(data);
-        toast.success('Categories refreshed');
-      } else {
-        toast.error('Failed to refresh categories');
       }
     } catch (err) {
       console.error('Error refreshing categories:', err);
-      toast.error('Error refreshing categories');
-    } finally {
-      setIsLoadingCategories(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError(null);
 
-    try {
-      // Map form data to Product type structure
-      const dataToSend = {
-        id: formData.id,
-        name: formData.name,
-        description: formData.description,
-        price: parseFloat(formData.price as any) || 0,
-        images: images || [],
-        category: formData.category,
-        subcategory: formData.subcategory,
-        tags: formData.tags,
-        stock: formData.stock || 0,
-        featured: formData.featured || false,
-        status: formData.status,
-        seoTitle: formData.seoTitle,
-        seoDescription: formData.seoDescription,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+    // Validation
+    if (!formData.name.trim()) {
+      setError('Product name is required');
+      return;
+    }
 
-      if (isEditing) {
-        await updateProduct(dataToSend as any);
+    if (formData.price <= 0) {
+      setError('Price must be greater than 0');
+      return;
+    }
+
+    try {
+      const productData = { ...formData, images };
+
+      let savedProduct: Product;
+      if (isEditing && product?.id) {
+        savedProduct = await updateProduct(productData);
+        toast.success('Product updated successfully');
       } else {
-        await addProduct(dataToSend as any);
+        savedProduct = await addProduct(productData);
+        toast.success('Product created successfully');
       }
-      onProductSave(formData);
-    } catch (err: any) {
-      console.error('Error saving product:', err);
-      setError(err.message || 'An unexpected error occurred.');
-    } finally {
-      setIsLoading(false);
+
+      onProductSave(savedProduct);
+    } catch (error: any) {
+      setError(error.message);
+      toast.error('Failed to save product: ' + error.message);
     }
   };
 
@@ -352,13 +359,12 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
             type="button"
             variant="outline"
             onClick={() => onProductSave(formData)}
-            disabled={isLoading}
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading}>
+          <Button type="submit">
             <Save className="h-4 w-4 mr-2" />
-            {isLoading ? 'Saving...' : 'Save Product'}
+            Save Product
           </Button>
         </div>
       </div>
@@ -407,15 +413,6 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
                   <div className="flex justify-between items-center mb-2">
                     <Label htmlFor="category">Category *</Label>
                     <div className="flex space-x-2">
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={refreshCategories}
-                        disabled={isLoadingCategories}
-                      >
-                        <RefreshCw className={`h-4 w-4 ${isLoadingCategories ? 'animate-spin' : ''}`} />
-                      </Button>
                       <Dialog open={isNewCategoryDialogOpen} onOpenChange={setIsNewCategoryDialogOpen}>
                         <DialogTrigger asChild>
                           <Button type="button" variant="outline" size="sm">
@@ -477,7 +474,6 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
                   <Select 
                     value={formData.category} 
                     onValueChange={(value) => handleInputChange('category', value as ProductCategoryType)}
-                    disabled={isLoadingCategories}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />

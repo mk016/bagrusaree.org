@@ -3,9 +3,8 @@
 import { useState, memo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, ShoppingCart, Star, Eye } from 'lucide-react';
+import { Heart, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCartStore, useWishlistStore } from '@/lib/store';
 import { Product } from '@/lib/types';
@@ -116,8 +115,8 @@ function ProductCard({ product, className }: ProductCardProps) {
           </div>
         </Link>
 
-        {/* Badges - Top Left */}
-        <div className="absolute top-3 left-3 flex flex-col space-y-2 pointer-events-none z-10">
+        {/* Badges - Top Right */}
+        <div className="absolute top-3 right-3 flex flex-col space-y-2 pointer-events-none z-10">
           {/* Sale Badge */}
           {discountPercentage > 0 && (
             <div className="bg-black text-white text-xs font-medium px-2 py-1 rounded-none">
@@ -140,9 +139,9 @@ function ProductCard({ product, className }: ProductCardProps) {
           )}
         </div>
 
-        {/* Wishlist Button - Top Right */}
+        {/* Wishlist Button - Top Left */}
         <div className={cn(
-          "absolute top-3 right-3 transition-opacity duration-300",
+          "absolute top-3 left-3 transition-opacity duration-300",
           isHovered ? "opacity-100" : "opacity-0"
         )}>
           <Button
@@ -196,39 +195,27 @@ function ProductCard({ product, className }: ProductCardProps) {
             </h3>
             
             {/* Price Section */}
-            <div className="text-center space-y-1">
-              {/* Original and Sale Price */}
+            <div className="text-center space-y-2">
+              {/* Original and Sale Price on same line */}
               <div className="flex items-center justify-center space-x-2">
+                {/* Compare Price (Original Price) */}
                 {product.comparePrice && (
                   <span className="text-sm text-gray-500 line-through">
                     Rs. {product.comparePrice.toLocaleString()}.00
                   </span>
                 )}
-                <span className="text-lg font-semibold text-gray-900">
+                {/* Our Sale Price */}
+                <span className="text-base font-semibold text-gray-900">
                   Rs. {product.price.toLocaleString()}.00
                 </span>
               </div>
               
-              {/* Save Percentage */}
+              {/* Discount Percentage */}
               {discountPercentage > 0 && (
                 <div className="text-red-600 text-sm font-medium">
                   Save {discountPercentage}%
                 </div>
               )}
-            </div>
-            
-            {/* Star Rating */}
-            <div className="flex items-center justify-center space-x-1">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={cn(
-                    "h-3 w-3",
-                    i < 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                  )}
-                />
-              ))}
-              <span className="text-xs text-gray-500 ml-1">(24)</span>
             </div>
           </div>
         </CardContent>
