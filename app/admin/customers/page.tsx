@@ -6,7 +6,6 @@ import { API_ENDPOINTS } from '@/lib/constants';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -21,24 +20,11 @@ export default function CustomersPage() {
       } catch (err) {
         console.error('Error fetching customers:', err);
         setError('Failed to load customers data');
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchCustomers();
   }, []);
-
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">Customers Management</h1>
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-        </div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
