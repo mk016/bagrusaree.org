@@ -44,8 +44,6 @@ export default function BannersPage() {
     active: true,
     order: 1,
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingBanners, setIsLoadingBanners] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -53,7 +51,6 @@ export default function BannersPage() {
   }, []);
 
   const fetchBanners = async () => {
-    setIsLoadingBanners(true);
     try {
       const response = await fetch('/api/banners');
       if (!response.ok) {
@@ -68,8 +65,6 @@ export default function BannersPage() {
         description: 'Failed to load banners',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoadingBanners(false);
     }
   };
 
@@ -85,7 +80,6 @@ export default function BannersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
     try {
       if (editingBanner) {
@@ -167,8 +161,6 @@ export default function BannersPage() {
         description: 'Failed to save banner',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -205,8 +197,7 @@ export default function BannersPage() {
         title: 'Success',
         description: 'Banner deleted successfully',
       });
-      
-      // Refresh banners list
+
       await fetchBanners();
     } catch (error) {
       console.error('Error deleting banner:', error);
@@ -221,12 +212,12 @@ export default function BannersPage() {
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
       const response = await fetch(`/api/banners/${id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          isActive: !currentStatus,
+          active: !currentStatus,
         }),
       });
 
@@ -234,16 +225,34 @@ export default function BannersPage() {
         throw new Error(`Error: ${response.status}`);
       }
 
-      // Refresh banners list
       await fetchBanners();
+      toast({
+        title: 'Success',
+        description: `Banner ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
+      });
     } catch (error) {
-      console.error('Error updating banner status:', error);
+      console.error('Error toggling banner status:', error);
       toast({
         title: 'Error',
         description: 'Failed to update banner status',
         variant: 'destructive',
       });
     }
+  };
+
+  const openAddDialog = () => {
+    setEditingBanner(null);
+    setFormData({
+      title: '',
+      description: '',
+      image: '',
+      imageId: '',
+      imageName: '',
+      link: '',
+      active: true,
+      order: 1,
+    });
+    setIsDialogOpen(true);
   };
 
   return (
@@ -262,19 +271,7 @@ export default function BannersPage() {
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => {
-              setEditingBanner(null);
-              setFormData({
-                title: '',
-                description: '',
-                image: '',
-                imageId: '',
-                imageName: '',
-                link: '',
-                active: true,
-                order: banners.length + 1,
-              });
-            }}>
+            <Button onClick={openAddDialog}>
               <Plus className="h-4 w-4 mr-2" />
               Add Banner
             </Button>
@@ -395,8 +392,8 @@ export default function BannersPage() {
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Saving...' : editingBanner ? 'Update Banner' : 'Create Banner'}
+                <Button type="submit">
+                  {editingBanner ? 'Update Banner' : 'Create Banner'}
                 </Button>
               </div>
             </form>
@@ -411,11 +408,7 @@ export default function BannersPage() {
           <CardTitle>All Banners ({banners.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoadingBanners ? (
-            <div className="flex justify-center items-center py-8">
-              <p>Loading banners...</p>
-            </div>
-          ) : banners.length === 0 ? (
+          {banners.length === 0 ? (
             <div className="text-center py-8">
               <p>No banners found. Create your first banner!</p>
             </div>
