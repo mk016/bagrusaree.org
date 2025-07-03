@@ -9,29 +9,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
         const fetchedOrders = await getOrders();
         setOrders(fetchedOrders);
         setError(null);
       } catch (err: any) {
         console.error("Failed to load orders:", err);
         setError("Failed to load orders: " + err.message);
-      } finally {
-        setLoading(false);
       }
     };
     fetchData();
   }, []);
-
-  if (loading) {
-    return <div className="container mx-auto py-8 text-center">Loading orders...</div>;
-  }
 
   if (error) {
     return <div className="container mx-auto py-8 text-center text-red-600">Error: {error}</div>;
