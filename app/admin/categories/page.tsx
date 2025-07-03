@@ -37,7 +37,6 @@ interface SubcategoryFormData {
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   
@@ -69,7 +68,6 @@ export default function CategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      setLoading(true);
       // Try to fetch from API first
       try {
         const data = await getCategories();
@@ -87,8 +85,6 @@ export default function CategoriesPage() {
     } catch (err: any) {
       console.error("Failed to load categories:", err);
       setError("Failed to load categories: " + err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -305,10 +301,6 @@ export default function CategoriesPage() {
     }
     setSubcategoryDialogOpen(true);
   };
-
-  if (loading) {
-    return <div className="container mx-auto py-8 text-center">Loading categories...</div>;
-  }
 
   if (error) {
     return <div className="container mx-auto py-8 text-center text-red-600">Error: {error}</div>;
