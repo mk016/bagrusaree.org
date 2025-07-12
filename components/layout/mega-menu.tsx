@@ -7,6 +7,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { API_ENDPOINTS } from '@/lib/constants';
 
+// Static navigation items that appear before categories
+const STATIC_NAV_ITEMS = [
+  { name: 'Home', href: '/', id: 'home' },
+  { name: 'Trending', href: '/trending', id: 'trending' },
+];
+
 // Default categories to show while loading
 const DEFAULT_CATEGORIES = [
   {
@@ -55,6 +61,17 @@ const DEFAULT_CATEGORIES = [
       { id: '5-2', name: 'Double Bedsheets', slug: 'double-bedsheets' },
     ],
   },
+  {
+    id: '6',
+    name: 'Stitched Collection',
+    slug: 'stitched-collection',
+    subcategories: [
+      { id: '6-1', name: 'Ready to Wear Sarees', slug: 'ready-to-wear-sarees' },
+      { id: '6-2', name: 'Stitched Suits', slug: 'stitched-suits' },
+      { id: '6-3', name: 'Stitched Blouses', slug: 'stitched-blouses' },
+      { id: '6-4', name: 'Stitched Lehengas', slug: 'stitched-lehengas' },
+    ],
+  },
 ];
 
 interface MegaMenuProps {
@@ -90,6 +107,17 @@ export function MegaMenu({ isMobile = false }: MegaMenuProps) {
   if (isMobile) {
     return (
       <nav className="space-y-2">
+        {STATIC_NAV_ITEMS.map((item) => (
+          <Link
+            key={item.id}
+            href={item.href}
+            className="block py-2 px-2 text-sm text-gray-600 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors"
+          >
+            {item.name}
+          </Link>
+        ))}
+        {/* Separator */}
+        <div className="border-t border-gray-200 my-2"></div>
         {categories.map((category) => (
           <div key={category.id}>
             <div className="flex items-center justify-between">
@@ -139,7 +167,16 @@ export function MegaMenu({ isMobile = false }: MegaMenuProps) {
 
   return (
     <nav className="relative">
-      <div className="flex items-center space-x-8 py-4">
+      <div className="flex items-center justify-center space-x-8 py-4">
+        {STATIC_NAV_ITEMS.map((item) => (
+          <Link
+            key={item.id}
+            href={item.href}
+            className="flex items-center space-x-1 py-2 text-sm font-medium hover:text-indigo-600 transition-colors"
+          >
+            <span>{item.name}</span>
+          </Link>
+        ))}
         {categories.map((category) => (
           <div
             key={category.id}
