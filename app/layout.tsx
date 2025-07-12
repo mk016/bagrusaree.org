@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import { ImageKitAppProvider } from '@/components/providers/imagekit-provider';
+import { FloatingWhatsApp } from '@/components/ui/floating-whatsapp';
 import { Analytics } from '@vercel/analytics/react';
 
 export const metadata: Metadata = {
@@ -22,6 +23,7 @@ export default function RootLayout({
           <ImageKitAppProvider>
             {children}
           </ImageKitAppProvider>
+          <FloatingWhatsApp />
           <Analytics />
         </body>
       </html>

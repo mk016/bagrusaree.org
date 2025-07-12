@@ -17,6 +17,91 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Plus, Edit, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Default categories for admin panel
+const DEFAULT_CATEGORIES_FOR_ADMIN = [
+  {
+    id: '1',
+    name: 'Sarees',
+    slug: 'sarees',
+    description: 'Traditional Indian sarees collection',
+    image: '/assets/sarees/saree1.jpeg',
+    featured: true,
+    order: 1,
+    subcategories: [
+      { id: '1-1', name: 'Cotton Sarees', slug: 'cotton-sarees', description: 'Comfortable cotton sarees', image: '', categoryId: '1', order: 1 },
+      { id: '1-2', name: 'Silk Sarees', slug: 'silk-sarees', description: 'Luxurious silk sarees', image: '', categoryId: '1', order: 2 },
+      { id: '1-3', name: 'Printed Sarees', slug: 'printed-sarees', description: 'Beautiful printed sarees', image: '', categoryId: '1', order: 3 },
+    ],
+  },
+  {
+    id: '2',
+    name: 'Suit Sets',
+    slug: 'suit-sets',
+    description: 'Complete suit sets for every occasion',
+    image: '/assets/suit/suit2.webp',
+    featured: true,
+    order: 2,
+    subcategories: [
+      { id: '2-1', name: 'Anarkali Suits', slug: 'anarkali-suits', description: 'Elegant Anarkali suits', image: '', categoryId: '2', order: 1 },
+      { id: '2-2', name: 'Palazzo Suits', slug: 'palazzo-suits', description: 'Comfortable palazzo suits', image: '', categoryId: '2', order: 2 },
+    ],
+  },
+  {
+    id: '3',
+    name: 'Dress Material',
+    slug: 'dress-material',
+    description: 'Unstitched dress materials',
+    image: '/assets/chiffon_dupatta/dupatta1.webp',
+    featured: false,
+    order: 3,
+    subcategories: [
+      { id: '3-1', name: 'Cotton Dress Material', slug: 'cotton-dress-material', description: 'Cotton fabric for dresses', image: '', categoryId: '3', order: 1 },
+      { id: '3-2', name: 'Silk Dress Material', slug: 'silk-dress-material', description: 'Silk fabric for dresses', image: '', categoryId: '3', order: 2 },
+    ],
+  },
+  {
+    id: '4',
+    name: 'Dupattas',
+    slug: 'dupattas',
+    description: 'Beautiful dupattas and scarves',
+    image: '/assets/chiffon_dupatta/dupatta2.webp',
+    featured: false,
+    order: 4,
+    subcategories: [
+      { id: '4-1', name: 'Cotton Dupattas', slug: 'cotton-dupattas', description: 'Cotton dupattas', image: '', categoryId: '4', order: 1 },
+      { id: '4-2', name: 'Silk Dupattas', slug: 'silk-dupattas', description: 'Silk dupattas', image: '', categoryId: '4', order: 2 },
+    ],
+  },
+  {
+    id: '5',
+    name: 'Bedsheets',
+    slug: 'bedsheets',
+    description: 'Comfortable bedsheets and home textiles',
+    image: '/assets/Banner/Banner1.webp',
+    featured: false,
+    order: 5,
+    subcategories: [
+      { id: '5-1', name: 'Single Bedsheets', slug: 'single-bedsheets', description: 'Single bed sheets', image: '', categoryId: '5', order: 1 },
+      { id: '5-2', name: 'Double Bedsheets', slug: 'double-bedsheets', description: 'Double bed sheets', image: '', categoryId: '5', order: 2 },
+    ],
+  },
+  {
+    id: '6',
+    name: 'Stitched Collection',
+    slug: 'stitched-collection',
+    description: 'Ready-to-wear stitched garments',
+    image: '/assets/suit/suit3.webp',
+    featured: true,
+    order: 6,
+    subcategories: [
+      { id: '6-1', name: 'Ready to Wear Sarees', slug: 'ready-to-wear-sarees', description: 'Pre-stitched sarees', image: '', categoryId: '6', order: 1 },
+      { id: '6-2', name: 'Stitched Suits', slug: 'stitched-suits', description: 'Ready-to-wear suits', image: '', categoryId: '6', order: 2 },
+      { id: '6-3', name: 'Stitched Blouses', slug: 'stitched-blouses', description: 'Ready-to-wear blouses', image: '', categoryId: '6', order: 3 },
+      { id: '6-4', name: 'Stitched Lehengas', slug: 'stitched-lehengas', description: 'Ready-to-wear lehengas', image: '', categoryId: '6', order: 4 },
+    ],
+  },
+];
+
 interface CategoryFormData {
   name: string;
   slug: string;
@@ -68,23 +153,28 @@ export default function CategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      // Try to fetch from API first
+      // Always start with default categories
+      let allCategories = [...DEFAULT_CATEGORIES_FOR_ADMIN];
+      
+      // Try to fetch from API and merge with defaults
       try {
         const data = await getCategories();
         if (data && data.length > 0) {
-          setCategories(data);
-          return;
+          // Merge API data with defaults, keeping API data for existing categories
+          const apiCategoryIds = data.map((cat: Category) => cat.id);
+          const defaultOnlyCategories = allCategories.filter((cat: Category) => !apiCategoryIds.includes(cat.id));
+          allCategories = [...data, ...defaultOnlyCategories];
         }
       } catch (apiErr) {
-        console.warn("API fetch failed, using mock data:", apiErr);
+        console.warn("API fetch failed, using default categories:", apiErr);
       }
       
-      // Fall back to mock data if API fails or returns empty
-      const mockData = generateMockCategories(8);
-      setCategories(mockData);
+      setCategories(allCategories);
     } catch (err: any) {
       console.error("Failed to load categories:", err);
       setError("Failed to load categories: " + err.message);
+      // Fall back to default categories even on error
+      setCategories(DEFAULT_CATEGORIES_FOR_ADMIN);
     }
   };
 
