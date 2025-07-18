@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Star, TrendingUp, Users, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/products/product-card';
@@ -18,7 +17,7 @@ import { IMAGE_PLACEHOLDER } from '@/lib/constants';
 
 // Stats icons mapping
 const statsIcons = {
-  'customers': Users,
+  'customers': Users, 
   'products': ShoppingCart,
   'rating': Star,
   'years': TrendingUp,
@@ -26,10 +25,10 @@ const statsIcons = {
 
 // Default/fallback data that shows immediately
 const DEFAULT_STATS = [
-  { label: 'Happy Customers', value: '50,000+', icon: Users },
-  { label: 'Products Sold', value: '100,000+', icon: ShoppingCart },
+  { label: 'Happy Customers', value: '10,000+', icon: Users },
+  { label: 'Products Sold', value: '50,000+', icon: ShoppingCart },
   { label: 'Customer Rating', value: '4.9/5', icon: Star },
-  { label: 'Years of Trust', value: '10+', icon: TrendingUp },
+  { label: 'Years of Trust', value: '5+', icon: TrendingUp },
 ];
 
 const DEFAULT_BANNERS: Banner[] = [
@@ -56,6 +55,82 @@ export default function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [banners, setBanners] = useState<Banner[]>(DEFAULT_BANNERS);
 
+  // Default categories to ensure the section always shows
+  const DEFAULT_CATEGORIES = [
+    {
+      id: '1',
+      name: 'Sarees',
+      slug: 'sarees',
+      description: 'Traditional Indian sarees collection',
+      image: '/assets/sarees/saree1.jpeg',
+      featured: true,
+      order: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      subcategories: [],
+    },
+    {
+      id: '2',
+      name: 'Suit Sets',
+      slug: 'suit-sets',
+      description: 'Complete suit sets for every occasion',
+      image: '/assets/suit/suit2.webp',
+      featured: true,
+      order: 2,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      subcategories: [],
+    },
+    {
+      id: '3',
+      name: 'Dress Material',
+      slug: 'dress-material',
+      description: 'Unstitched dress materials',
+      image: '/assets/chiffon_dupatta/dupatta1.webp',
+      featured: false,
+      order: 3,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      subcategories: [],
+    },
+    {
+      id: '4',
+      name: 'Dupattas',
+      slug: 'dupattas',
+      description: 'Beautiful dupattas and scarves',
+      image: '/assets/chiffon_dupatta/dupatta2.webp',
+      featured: false,
+      order: 4,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      subcategories: [],
+    },
+    {
+      id: '5',
+      name: 'Bedsheets',
+      slug: 'bedsheets',
+      description: 'Comfortable bedsheets and home textiles',
+      image: '/assets/Banner/Banner1.webp',
+      featured: false,
+      order: 5,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      subcategories: [],
+    },
+    {
+      id: '6',
+      name: 'Stitched Collection',
+      slug: 'stitched-collection',
+      description: 'Ready-to-wear stitched garments',
+      image: '/assets/suit/suit3.webp',
+      featured: true,
+      order: 6,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      subcategories: [],
+    },
+  ];
+
   // Progressive data loading - each section loads independently
   useEffect(() => {
     // Load banners first (lightweight)
@@ -67,24 +142,22 @@ export default function Home() {
       })
       .catch(console.error);
 
-    // Load categories (lightweight)
+    // Load categories (lightweight) - start with defaults
+    setCategories(DEFAULT_CATEGORIES);
     getCategories()
-      .then(setCategories)
-      .catch(console.error);
-
-    // Load stats (lightweight)
-    fetch('/api/stats')
-      .then(res => res.json())
-      .then(statsData => {
-        if (Array.isArray(statsData)) {
-          const statsWithIcons = statsData.map(stat => ({
-            ...stat,
-            icon: statsIcons[stat.id as keyof typeof statsIcons] || Users
-          }));
-          setStats(statsWithIcons);
+      .then(data => {
+        if (data && data.length > 0) {
+          console.log('Loaded categories from API:', data.length);
+          setCategories(data);
+        } else {
+          console.log('Using default categories');
         }
       })
-      .catch(console.error);
+      .catch(err => {
+        console.log('Categories API failed, using defaults:', err);
+      });
+
+    // Use default stats only - no API call needed
 
     // Load products last (heavier) - don't block UI
     getAllProducts()
@@ -172,6 +245,52 @@ export default function Home() {
         )}
       </section>
 
+      {/* Shop by Categories - Responsive Horizontal Scroll Section */}
+      {categories.length > 0 && (
+        <section className="py-8 bg-white">
+          <div className="container mx-auto px-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
+              Shop by Categories
+            </h2>
+            <div
+              className="flex space-x-3 sm:space-x-4 overflow-x-auto pb-2"
+              style={{
+                scrollbarWidth: 'none', // Firefox
+                msOverflowStyle: 'none', // IE 10+
+              }}
+            >
+              <style jsx>{`
+                div::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
+              {categories.map((category) => (
+                <Link
+                  key={category.id}
+                  href={`/category/${category.slug}`}
+                  className="flex-shrink-0 flex flex-col items-center w-20 h-auto xs:w-24 sm:w-32 md:w-40 lg:w-48 xl:w-56"
+                >
+                  <div
+                    className="rounded-full overflow-hidden bg-gray-100 border-2 border-indigo-100 flex items-center justify-center mb-2 shadow-sm transition-transform hover:scale-105 w-16 h-16 xs:w-20 xs:h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 xl:w-52 xl:h-52"
+                  >
+                    <img
+                      src={category.image || IMAGE_PLACEHOLDER}
+                      alt={category.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span
+                    className="text-[10px] xs:text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-gray-800 text-center font-medium"
+                  >
+                    {category.name}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Stats Section - Shows immediately */}
       <section className="py-10 sm:py-14 md:py-16 bg-gray-50">
         <div className="container mx-auto px-4">
@@ -192,43 +311,10 @@ export default function Home() {
       </section>
 
       {/* Featured Categories - Shows when available */}
-      {featuredCategories.length > 0 && (
-        <section className="py-10 sm:py-14 md:py-16 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-8 sm:mb-12">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
-                Shop by Category
-              </h2>
-              <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
-                Discover our carefully curated collections designed to celebrate 
-                the beauty of traditional Indian fashion.
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-              {featuredCategories.map((category) => (
-                <Link key={category.id} href={`/category/${category.slug}`}>
-                  <Card className="group cursor-pointer overflow-hidden hover:shadow-lg transition-all duration-300 bg-white">
-                    <div className="aspect-square relative">
-                      <img
-                        src={category.image || IMAGE_PLACEHOLDER}
-                        alt={category.name}
-                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <h3 className="text-white text-sm sm:text-lg font-semibold text-center px-2">
-                          {category.name}
-                        </h3>
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+    
+     
+
+
 
       {/* Trending Products - Shows when available */}
       {trendingProducts.length > 0 && (
