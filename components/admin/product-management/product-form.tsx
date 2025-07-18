@@ -64,6 +64,103 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   
+  // Default categories to ensure the form always has categories available
+  const DEFAULT_CATEGORIES_FOR_FORM = [
+    {
+      id: '1',
+      name: 'Sarees',
+      slug: 'sarees',
+      description: 'Traditional Indian sarees collection',
+      image: '/assets/sarees/saree1.jpeg',
+      featured: true,
+      order: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      subcategories: [
+        { id: '1-1', name: 'Cotton Sarees', slug: 'cotton-sarees', description: 'Comfortable cotton sarees', image: '', categoryId: '1', order: 1, createdAt: new Date(), updatedAt: new Date() },
+        { id: '1-2', name: 'Silk Sarees', slug: 'silk-sarees', description: 'Luxurious silk sarees', image: '', categoryId: '1', order: 2, createdAt: new Date(), updatedAt: new Date() },
+        { id: '1-3', name: 'Printed Sarees', slug: 'printed-sarees', description: 'Beautiful printed sarees', image: '', categoryId: '1', order: 3, createdAt: new Date(), updatedAt: new Date() },
+      ],
+    },
+    {
+      id: '2',
+      name: 'Suit Sets',
+      slug: 'suit-sets',
+      description: 'Complete suit sets for every occasion',
+      image: '/assets/suit/suit2.webp',
+      featured: true,
+      order: 2,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      subcategories: [
+        { id: '2-1', name: 'Anarkali Suits', slug: 'anarkali-suits', description: 'Elegant Anarkali suits', image: '', categoryId: '2', order: 1, createdAt: new Date(), updatedAt: new Date() },
+        { id: '2-2', name: 'Palazzo Suits', slug: 'palazzo-suits', description: 'Comfortable palazzo suits', image: '', categoryId: '2', order: 2, createdAt: new Date(), updatedAt: new Date() },
+      ],
+    },
+    {
+      id: '3',
+      name: 'Dress Material',
+      slug: 'dress-material',
+      description: 'Unstitched dress materials',
+      image: '/assets/chiffon_dupatta/dupatta1.webp',
+      featured: false,
+      order: 3,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      subcategories: [
+        { id: '3-1', name: 'Cotton Dress Material', slug: 'cotton-dress-material', description: 'Cotton fabric for dresses', image: '', categoryId: '3', order: 1, createdAt: new Date(), updatedAt: new Date() },
+        { id: '3-2', name: 'Silk Dress Material', slug: 'silk-dress-material', description: 'Silk fabric for dresses', image: '', categoryId: '3', order: 2, createdAt: new Date(), updatedAt: new Date() },
+      ],
+    },
+    {
+      id: '4',
+      name: 'Dupattas',
+      slug: 'dupattas',
+      description: 'Beautiful dupattas and scarves',
+      image: '/assets/chiffon_dupatta/dupatta2.webp',
+      featured: false,
+      order: 4,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      subcategories: [
+        { id: '4-1', name: 'Cotton Dupattas', slug: 'cotton-dupattas', description: 'Cotton dupattas', image: '', categoryId: '4', order: 1, createdAt: new Date(), updatedAt: new Date() },
+        { id: '4-2', name: 'Silk Dupattas', slug: 'silk-dupattas', description: 'Silk dupattas', image: '', categoryId: '4', order: 2, createdAt: new Date(), updatedAt: new Date() },
+      ],
+    },
+    {
+      id: '5',
+      name: 'Bedsheets',
+      slug: 'bedsheets',
+      description: 'Comfortable bedsheets and home textiles',
+      image: '/assets/Banner/Banner1.webp',
+      featured: false,
+      order: 5,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      subcategories: [
+        { id: '5-1', name: 'Single Bedsheets', slug: 'single-bedsheets', description: 'Single bed sheets', image: '', categoryId: '5', order: 1, createdAt: new Date(), updatedAt: new Date() },
+        { id: '5-2', name: 'Double Bedsheets', slug: 'double-bedsheets', description: 'Double bed sheets', image: '', categoryId: '5', order: 2, createdAt: new Date(), updatedAt: new Date() },
+      ],
+    },
+    {
+      id: '6',
+      name: 'Stitched Collection',
+      slug: 'stitched-collection',
+      description: 'Ready-to-wear stitched garments',
+      image: '/assets/suit/suit3.webp',
+      featured: true,
+      order: 6,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      subcategories: [
+        { id: '6-1', name: 'Ready to Wear Sarees', slug: 'ready-to-wear-sarees', description: 'Pre-stitched sarees', image: '', categoryId: '6', order: 1, createdAt: new Date(), updatedAt: new Date() },
+        { id: '6-2', name: 'Stitched Suits', slug: 'stitched-suits', description: 'Ready-to-wear suits', image: '', categoryId: '6', order: 2, createdAt: new Date(), updatedAt: new Date() },
+        { id: '6-3', name: 'Stitched Blouses', slug: 'stitched-blouses', description: 'Ready-to-wear blouses', image: '', categoryId: '6', order: 3, createdAt: new Date(), updatedAt: new Date() },
+        { id: '6-4', name: 'Stitched Lehengas', slug: 'stitched-lehengas', description: 'Ready-to-wear lehengas', image: '', categoryId: '6', order: 4, createdAt: new Date(), updatedAt: new Date() },
+      ],
+    },
+  ];
+  
   // New category dialog state
   const [isNewCategoryDialogOpen, setIsNewCategoryDialogOpen] = useState(false);
   const [newCategory, setNewCategory] = useState<CategoryFormData>({
@@ -86,15 +183,24 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        // Start with default categories immediately
+        setCategories(DEFAULT_CATEGORIES_FOR_FORM);
+        
+        // Try to fetch from API and update if successful
         const response = await fetch(API_ENDPOINTS.CATEGORIES);
         if (response.ok) {
           const data = await response.json();
-          setCategories(data);
+          if (data && data.length > 0) {
+            console.log('Loaded categories from API for product form:', data.length);
+            setCategories(data);
+          } else {
+            console.log('API returned empty, using default categories for product form');
+          }
         } else {
-          console.error('Failed to fetch categories');
+          console.log('API failed, using default categories for product form');
         }
       } catch (err) {
-        console.error('Error fetching categories:', err);
+        console.log('Error fetching categories, using defaults:', err);
       }
     };
 
@@ -299,10 +405,19 @@ export function ProductForm({ product, isEditing = false, onProductSave }: Produ
       const response = await fetch(API_ENDPOINTS.CATEGORIES);
       if (response.ok) {
         const data = await response.json();
-        setCategories(data);
+        if (data && data.length > 0) {
+          setCategories(data);
+        } else {
+          // Fallback to default categories if API returns empty
+          setCategories(DEFAULT_CATEGORIES_FOR_FORM);
+        }
+      } else {
+        // Fallback to default categories if API fails
+        setCategories(DEFAULT_CATEGORIES_FOR_FORM);
       }
     } catch (err) {
-      console.error('Error refreshing categories:', err);
+      console.error('Error refreshing categories, using defaults:', err);
+      setCategories(DEFAULT_CATEGORIES_FOR_FORM);
     }
   };
 
