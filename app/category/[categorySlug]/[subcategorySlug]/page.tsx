@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
-import { Grid, List } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Header } from '@/components/layout/header';
@@ -13,7 +13,7 @@ import { API_ENDPOINTS } from '@/lib/constants';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Product, Category, Subcategory } from '@/lib/types';
-import { getAllProducts, getCategories } from '@/lib/data';
+import { getProductsBySubcategory, getCategories } from '@/lib/data';
 import { FloatingWhatsApp } from '@/components/ui/floating-whatsapp';
 
 export default function SubcategoryPage() {
@@ -22,7 +22,7 @@ export default function SubcategoryPage() {
   const subcategorySlug = params?.subcategorySlug as string;
   
   const [sortBy, setSortBy] = useState('featured');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
   const [isLoading, setIsLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -32,7 +32,7 @@ export default function SubcategoryPage() {
     const loadData = async () => {
       try {
         const [productsData, categoriesData] = await Promise.all([
-          getAllProducts(),
+          getProductsBySubcategory(categorySlug, subcategorySlug),
           getCategories()
         ]);
         setProducts(productsData);
@@ -47,7 +47,7 @@ export default function SubcategoryPage() {
     };
 
     loadData();
-  }, []);
+  }, [categorySlug, subcategorySlug]);
 
   const category = useMemo(() => 
     categories.find(cat => cat.slug === categorySlug), 
@@ -60,10 +60,7 @@ export default function SubcategoryPage() {
   );
 
   useEffect(() => {
-    let filtered = products.filter(product => 
-      product.category === categorySlug && 
-      product.subcategory?.toLowerCase().replace(/\s+/g, '-') === subcategorySlug
-    );
+    let filtered = products; // Products are already filtered by category and subcategory
 
     // Sort products
     switch (sortBy) {
