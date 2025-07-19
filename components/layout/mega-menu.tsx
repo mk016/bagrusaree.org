@@ -139,7 +139,7 @@ export function MegaMenu({ isMobile = false }: MegaMenuProps) {
                 {category.subcategories.map((subcategory) => (
                   <Link
                     key={subcategory.id}
-                    href={`/category/${category.slug}/${subcategory.slug}`}
+                    href={`/category/${category.slug}`}
                     className="block py-1 px-2 text-sm text-gray-600 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors"
                   >
                     {subcategory.name}
@@ -193,7 +193,7 @@ export function MegaMenu({ isMobile = false }: MegaMenuProps) {
                     {category.subcategories.map((subcategory) => (
                       <Link
                         key={subcategory.id}
-                        href={`/category/${category.slug}/${subcategory.slug}`}
+                        href={`/category/${category.slug}`}
                         className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors"
                       >
                         {subcategory.name}
