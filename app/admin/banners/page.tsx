@@ -34,6 +34,7 @@ export default function BannersPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -80,8 +81,52 @@ export default function BannersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted!');
     
+    // Prevent double submission
+    if (isSubmitting) {
+      console.log('Already submitting, ignoring...');
+      return;
+    }
+    
+    // Validate form data
+    if (!formData.title.trim()) {
+      console.log('Title is required');
+      toast({
+        title: 'Error',
+        description: 'Banner title is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.image.trim()) {
+      console.log('Image is required');
+      toast({
+        title: 'Error',
+        description: 'Banner image is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    console.log('Form validation passed, submitting...');
+    setIsSubmitting(true);
+
     try {
+      const bannerData = {
+        title: formData.title.trim(),
+        description: formData.description.trim() || null,
+        image: formData.image,
+        imageId: formData.imageId,
+        imageName: formData.imageName,
+        link: formData.link.trim() || null,
+        active: formData.active,
+        order: formData.order,
+      };
+
+      console.log('Submitting banner data:', bannerData);
+
       if (editingBanner) {
         // Update existing banner
         const response = await fetch(`/api/banners/${editingBanner.id}`, {
@@ -89,20 +134,12 @@ export default function BannersPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            title: formData.title,
-            description: formData.description,
-            image: formData.image,
-            imageId: formData.imageId,
-            imageName: formData.imageName,
-            link: formData.link,
-            active: formData.active,
-            order: formData.order,
-          }),
+          body: JSON.stringify(bannerData),
         });
 
         if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}`);
         }
 
         toast({
@@ -116,20 +153,12 @@ export default function BannersPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            title: formData.title,
-            description: formData.description,
-            image: formData.image,
-            imageId: formData.imageId,
-            imageName: formData.imageName,
-            link: formData.link,
-            active: formData.active,
-            order: formData.order,
-          }),
+          body: JSON.stringify(bannerData),
         });
 
         if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}`);
         }
 
         toast({
@@ -158,9 +187,11 @@ export default function BannersPage() {
       console.error('Error saving banner:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save banner',
+        description: `Failed to save banner: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -241,6 +272,7 @@ export default function BannersPage() {
   };
 
   const openAddDialog = () => {
+    console.log('Opening add dialog...');
     setEditingBanner(null);
     setFormData({
       title: '',
@@ -253,13 +285,14 @@ export default function BannersPage() {
       order: 1,
     });
     setIsDialogOpen(true);
+    console.log('Dialog should be open now');
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Banner Management</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Banner Management</h1>
           <p className="text-gray-600">Manage homepage banners and promotional content</p>
         </div>
         <div className="flex space-x-2">
@@ -269,136 +302,143 @@ export default function BannersPage() {
               Banner Gallery
             </a>
           </Button>
+          
+          {/* Add Banner Dialog */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openAddDialog}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Banner
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] bg-white">
-            <DialogHeader>
-              <DialogTitle>
-                {editingBanner ? 'Edit Banner' : 'Add New Banner'}
-              </DialogTitle>
-              <DialogDescription>
-                {editingBanner ? 'Update banner details' : 'Create a new banner for the homepage'}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Tabs defaultValue="content" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="content">Content</TabsTrigger>
-                  <TabsTrigger value="image">Image</TabsTrigger>
-                </TabsList>
+            <DialogTrigger asChild>
+              <Button onClick={openAddDialog}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Banner
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] bg-white">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingBanner ? 'Edit Banner' : 'Add New Banner'}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingBanner ? 'Update banner details' : 'Create a new banner for the homepage'}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Tabs defaultValue="content" className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="content">Content</TabsTrigger>
+                    <TabsTrigger value="image">Image</TabsTrigger>
+                  </TabsList>
 
-                <TabsContent value="content" className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">Title *</Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={(e) => handleInputChange('title', e.target.value)}
-                      required
-                      className="bg-white"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => handleInputChange('description', e.target.value)}
-                      className="bg-white"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="link">Link URL</Label>
-                    <Input
-                      id="link"
-                      value={formData.link}
-                      onChange={(e) => handleInputChange('link', e.target.value)}
-                      placeholder="/category/sarees"
-                      className="bg-white"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
+                  <TabsContent value="content" className="space-y-4">
                     <div>
-                      <Label htmlFor="order">Display Order</Label>
+                      <Label htmlFor="title">Title *</Label>
                       <Input
-                        id="order"
-                        type="number"
-                        value={formData.order}
-                        onChange={(e) => handleInputChange('order', parseInt(e.target.value))}
-                        min="1"
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => handleInputChange('title', e.target.value)}
+                        required
                         className="bg-white"
                       />
                     </div>
                     
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="active"
-                        checked={formData.active}
-                        onCheckedChange={(checked) => handleInputChange('active', checked)}
+                    <div>
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
+                        className="bg-white"
                       />
-                      <Label htmlFor="active">Active</Label>
                     </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="image" className="space-y-4">
-                  <div>
-                    <Label>Banner Image</Label>
-                    <div className="mt-2">
-                      {formData.image ? (
-                        <div className="relative">
-                          <img
-                            src={formData.image}
-                            alt="Banner"
-                            className="w-full h-48 object-cover rounded-lg border"
-                          />
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            className="absolute top-2 right-2"
-                            onClick={() => {
-                              handleInputChange('image', '');
-                              handleInputChange('imageId', '');
-                              handleInputChange('imageName', '');
-                            }}
-                          >
-                            Change
-                          </Button>
-                        </div>
-                      ) : (
-                        <EnhancedImageUpload
-                          onUploadSuccess={handleImageUpload}
-                          folder="/banners"
-                          buttonText="Upload Banner Image"
-                          maxSizeMB={10}
+                    
+                    <div>
+                      <Label htmlFor="link">Link URL</Label>
+                      <Input
+                        id="link"
+                        value={formData.link}
+                        onChange={(e) => handleInputChange('link', e.target.value)}
+                        placeholder="/category/sarees"
+                        className="bg-white"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="order">Display Order</Label>
+                        <Input
+                          id="order"
+                          type="number"
+                          value={formData.order}
+                          onChange={(e) => handleInputChange('order', parseInt(e.target.value))}
+                          min="1"
+                          className="bg-white"
                         />
-                      )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="active"
+                          checked={formData.active}
+                          onCheckedChange={(checked) => handleInputChange('active', checked)}
+                        />
+                        <Label htmlFor="active">Active</Label>
+                      </div>
                     </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-              
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editingBanner ? 'Update Banner' : 'Create Banner'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+                  </TabsContent>
+
+                  <TabsContent value="image" className="space-y-4">
+                    <div>
+                      <Label>Banner Image</Label>
+                      <div className="mt-2">
+                        {formData.image ? (
+                          <div className="relative">
+                            <img
+                              src={formData.image}
+                              alt="Banner"
+                              className="w-full h-48 object-cover rounded-lg border"
+                            />
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              className="absolute top-2 right-2"
+                              onClick={() => {
+                                handleInputChange('image', '');
+                                handleInputChange('imageId', '');
+                                handleInputChange('imageName', '');
+                              }}
+                            >
+                              Change
+                            </Button>
+                          </div>
+                        ) : (
+                          <EnhancedImageUpload
+                            onUploadSuccess={handleImageUpload}
+                            folder="/banners"
+                            buttonText="Upload Banner Image"
+                            maxSizeMB={10}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+                
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsDialogOpen(false)}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving...' : (editingBanner ? 'Update Banner' : 'Create Banner')}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
