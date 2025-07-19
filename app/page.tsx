@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Star, TrendingUp, Users, ShoppingCart } from 'lucide-react';
+import { ArrowRight, Star, TrendingUp, Users, ShoppingCart, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
-import { getAllProducts, getCategories, getBanners } from '@/lib/data';
+import { getAllProducts, getCategories, getBanners, getProductsByCategory } from '@/lib/data';
 import { Product, Category, CategoryProductGroup } from '@/lib/types';
 import { Banner } from '@prisma/client';
 import { IMAGE_PLACEHOLDER } from '@/lib/constants';
@@ -28,6 +28,8 @@ const DEFAULT_STATS = [
   { label: 'Products Sold', value: '5,000+', icon: ShoppingCart },
   { label: 'Customer Rating', value: '4.9/5', icon: Star },
   { label: 'Years of Trust', value: '5+', icon: TrendingUp },
+  { label: 'Free Shipping', value: '₹1999+', icon: ShoppingCart },
+  { label: 'Easy Returns', value: '7 Days', icon: Star },
 ];
 
 const DEFAULT_BANNERS: Banner[] = [
@@ -53,82 +55,7 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [banners, setBanners] = useState<Banner[]>(DEFAULT_BANNERS);
-
-  // Default categories to ensure the section always shows
-  const DEFAULT_CATEGORIES = [
-    {
-      id: '1',
-      name: 'Sarees',
-      slug: 'sarees',
-      description: 'Traditional Indian sarees collection',
-      image: '/assets/sarees/saree1.jpeg',
-      featured: true,
-      order: 1,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      subcategories: [],
-    },
-    {
-      id: '2',
-      name: 'Suit Sets',
-      slug: 'suit-sets',
-      description: 'Complete suit sets for every occasion',
-      image: '/assets/suit/suit2.webp',
-      featured: true,
-      order: 2,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      subcategories: [],
-    },
-    {
-      id: '3',
-      name: 'Dress Material',
-      slug: 'dress-material',
-      description: 'Unstitched dress materials',
-      image: '/assets/chiffon_dupatta/dupatta1.webp',
-      featured: false,
-      order: 3,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      subcategories: [],
-    },
-    {
-      id: '4',
-      name: 'Dupattas',
-      slug: 'dupattas',
-      description: 'Beautiful dupattas and scarves',
-      image: '/assets/chiffon_dupatta/dupatta2.webp',
-      featured: false,
-      order: 4,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      subcategories: [],
-    },
-    {
-      id: '5',
-      name: 'Bedsheets',
-      slug: 'bedsheets',
-      description: 'Comfortable bedsheets and home textiles',
-      image: '/assets/Banner/Banner1.webp',
-      featured: false,
-      order: 5,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      subcategories: [],
-    },
-    {
-      id: '6',
-      name: 'Stitched Collection',
-      slug: 'stitched-collection',
-      description: 'Ready-to-wear stitched garments',
-      image: '/assets/suit/suit3.webp',
-      featured: true,
-      order: 6,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      subcategories: [],
-    },
-  ];
+  const [productsByCategory, setProductsByCategory] = useState<CategoryProductGroup[]>([]);
 
   // Progressive data loading - each section loads independently
   useEffect(() => {
@@ -142,9 +69,8 @@ export default function Home() {
       .catch(console.error);
 
     // Load categories (lightweight) - start with defaults
-    setCategories(DEFAULT_CATEGORIES);
     getCategories()
-      .then(data => {
+      .then((data: Category[]) => {
         if (data && data.length > 0) {
           console.log('Loaded categories from API:', data.length);
           setCategories(data);
@@ -164,6 +90,29 @@ export default function Home() {
       .catch(console.error);
   }, []);
 
+  // Load products by category for alternating sections
+  useEffect(() => {
+    if (categories.length > 0 && products.length > 0) {
+      const loadProductsByCategory = async () => {
+        const categoryGroups: CategoryProductGroup[] = [];
+        
+        for (const category of categories) {
+          const categoryProducts = await getProductsByCategory(category.slug);
+          if (categoryProducts.length > 0) {
+            categoryGroups.push({
+              category: category,
+              products: categoryProducts.slice(0, 4), // Limit to 4 products per category
+            });
+          }
+        }
+        
+        setProductsByCategory(categoryGroups);
+      };
+
+      loadProductsByCategory();
+    }
+  }, [categories, products]);
+
   // Banner rotation
   useEffect(() => {
     if (banners.length <= 1) return;
@@ -178,20 +127,6 @@ export default function Home() {
   // Get trending products (featured products)
   const trendingProducts = products.filter(product => product.featured).slice(0, 4);
   const featuredCategories = categories.filter(cat => cat.featured);
-
-  const productsByCategory: CategoryProductGroup[] = categories.reduce((acc: CategoryProductGroup[], category) => {
-    const productsInThisCategory = products.filter(
-      (product) => product.category === category.slug
-    ).slice(0, 4); // Limit to 4 products per category
-    
-    if (productsInThisCategory.length > 0) {
-      acc.push({
-        category: category,
-        products: productsInThisCategory,
-      });
-    }
-    return acc;
-  }, []);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -303,53 +238,131 @@ export default function Home() {
         )}
       </section>
 
-      {/* Shop by Categories - Responsive Horizontal Scroll Section */}
-      {categories.length > 0 && (
-        <section className="py-8 bg-white">
-          <div className="container mx-auto px-4">
-            <h2 className="text-xl sm:text-2xl font-bold text-center text-gray-900 mb-4">
-              Shop by Categories
-            </h2>
-            <div
-              className="flex space-x-3 sm:space-x-4 overflow-x-auto pb-2"
-              style={{
-                scrollbarWidth: 'none', // Firefox
-                msOverflowStyle: 'none', // IE 10+
-              }}
+      {/* Shop by Categories - Enhanced with Trending and More Categories */}
+      <section className="py-8 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-center text-gray-900 mb-4">
+            Shop by Categories
+          </h2>
+          <div
+            className="flex space-x-3 sm:space-x-4 overflow-x-auto pb-2"
+            style={{
+              scrollbarWidth: 'none', // Firefox
+              msOverflowStyle: 'none', // IE 10+
+            }}
+          >
+            <style jsx>{`
+              div::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
+            
+            {/* Trending Category */}
+            <Link
+              href="/trending"
+              className="flex-shrink-0 flex flex-col items-center w-20 h-auto xs:w-24 sm:w-32 md:w-40 lg:w-48 xl:w-56"
             >
-              <style jsx>{`
-                div::-webkit-scrollbar {
-                  display: none;
-                }
-              `}</style>
-              {categories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={`/category/${category.slug}`}
-                  className="flex-shrink-0 flex flex-col items-center w-20 h-auto xs:w-24 sm:w-32 md:w-40 lg:w-48 xl:w-56"
-                >
-                  <div
-                    className="rounded-full overflow-hidden bg-gray-100 border-2 border-indigo-100 flex items-center justify-center mb-2 shadow-sm transition-transform hover:scale-105 w-16 h-16 xs:w-20 xs:h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 xl:w-52 xl:h-52"
-                  >
-                    <img
-                      src={category.image || IMAGE_PLACEHOLDER}
-                      alt={category.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <span
-                    className="text-[10px] xs:text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-gray-800 text-center font-medium"
-                  >
-                    {category.name}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+              <div
+                className="rounded-full overflow-hidden bg-gradient-to-br from-orange-100 to-red-100 border-2 border-orange-200 flex items-center justify-center mb-2 shadow-sm transition-transform hover:scale-105 w-16 h-16 xs:w-20 xs:h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 xl:w-52 xl:h-52"
+              >
+                <TrendingUp className="h-8 w-8 xs:h-10 xs:w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 lg:h-20 lg:w-20 xl:h-24 xl:w-24 text-orange-600" />
+              </div>
+              <span className="text-[10px] xs:text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-gray-800 text-center font-medium">
+                Trending
+              </span>
+            </Link>
 
-      {/* Stats Section - Shows immediately */}
+            {/* Sarees Category */}
+            <Link
+              href="/category/sarees"
+              className="flex-shrink-0 flex flex-col items-center w-20 h-auto xs:w-24 sm:w-32 md:w-40 lg:w-48 xl:w-56"
+            >
+              <div
+                className="rounded-full overflow-hidden bg-gray-100 border-2 border-indigo-100 flex items-center justify-center mb-2 shadow-sm transition-transform hover:scale-105 w-16 h-16 xs:w-20 xs:h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 xl:w-52 xl:h-52"
+              >
+                <img
+                  src="/assets/sarees/saree1.jpeg"
+                  alt="Sarees"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="text-[10px] xs:text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-gray-800 text-center font-medium">
+                Sarees
+              </span>
+            </Link>
+
+            {/* Suits Category */}
+            <Link
+              href="/category/suit"
+              className="flex-shrink-0 flex flex-col items-center w-20 h-auto xs:w-24 sm:w-32 md:w-40 lg:w-48 xl:w-56"
+            >
+              <div
+                className="rounded-full overflow-hidden bg-gray-100 border-2 border-indigo-100 flex items-center justify-center mb-2 shadow-sm transition-transform hover:scale-105 w-16 h-16 xs:w-20 xs:h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 xl:w-52 xl:h-52"
+              >
+                <img
+                  src="/assets/suit/suit2.webp"
+                  alt="Suits"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="text-[10px] xs:text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-gray-800 text-center font-medium">
+                Suits
+              </span>
+            </Link>
+
+            {/* Dupattas Category */}
+            <Link
+              href="/category/dupattas"
+              className="flex-shrink-0 flex flex-col items-center w-20 h-auto xs:w-24 sm:w-32 md:w-40 lg:w-48 xl:w-56"
+            >
+              <div
+                className="rounded-full overflow-hidden bg-gray-100 border-2 border-indigo-100 flex items-center justify-center mb-2 shadow-sm transition-transform hover:scale-105 w-16 h-16 xs:w-20 xs:h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 xl:w-52 xl:h-52"
+              >
+                <img
+                  src="/assets/chiffon_dupatta/dupatta1.webp"
+                  alt="Dupattas"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="text-[10px] xs:text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-gray-800 text-center font-medium">
+                Dupattas
+              </span>
+            </Link>
+
+            {/* Bags Category */}
+            <Link
+              href="/category/bags"
+              className="flex-shrink-0 flex flex-col items-center w-20 h-auto xs:w-24 sm:w-32 md:w-40 lg:w-48 xl:w-56"
+            >
+              <div
+                className="rounded-full overflow-hidden bg-gray-100 border-2 border-indigo-100 flex items-center justify-center mb-2 shadow-sm transition-transform hover:scale-105 w-16 h-16 xs:w-20 xs:h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 xl:w-52 xl:h-52"
+              >
+                <ShoppingBag className="h-8 w-8 xs:h-10 xs:w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 lg:h-20 lg:w-20 xl:h-24 xl:w-24 text-indigo-600" />
+              </div>
+              <span className="text-[10px] xs:text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-gray-800 text-center font-medium">
+                Bags
+              </span>
+            </Link>
+
+            {/* Customer Service Category */}
+            <Link
+              href="/customer-service"
+              className="flex-shrink-0 flex flex-col items-center w-20 h-auto xs:w-24 sm:w-32 md:w-40 lg:w-48 xl:w-56"
+            >
+              <div
+                className="rounded-full overflow-hidden bg-gradient-to-br from-green-100 to-blue-100 border-2 border-green-200 flex items-center justify-center mb-2 shadow-sm transition-transform hover:scale-105 w-16 h-16 xs:w-20 xs:h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 xl:w-52 xl:h-52"
+              >
+                <Users className="h-8 w-8 xs:h-10 xs:w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 lg:h-20 lg:w-20 xl:h-24 xl:w-24 text-green-600" />
+              </div>
+              <span className="text-[10px] xs:text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-gray-800 text-center font-medium">
+                Customer
+              </span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section - Mobile Scroll View */}
       <section className="py-10 sm:py-14 md:py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div 
@@ -380,8 +393,9 @@ export default function Home() {
       </section>
 
       {/* Featured Categories - Shows when available */}
-    
      
+      
+ 
 
 
 
@@ -415,35 +429,257 @@ export default function Home() {
         </section>
       )}
 
-      {/* Products by Category - Shows when available */}
-      {productsByCategory.map((data) => (
-        <section key={data.category.id} className="py-10 sm:py-14 md:py-16 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-0">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
-                  {data.category.name} Products
-                </h2>
-                <p className="text-gray-600 text-sm sm:text-base">
-                  Handpicked collection of our bestselling items from {data.category.name}
-                </p>
-              </div>
-              <Button variant="outline" asChild className="bg-white w-full sm:w-auto">
-                <Link href={`/category/${data.category.slug}`}>
-                  View All {data.category.name}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
+      {/* KOTA DUPATTA SUIT SETS Collection */}
+      <section className="py-10 sm:py-14 md:py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-0">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
+                KOTA DUPATTA SUIT SETS
+              </h2>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Traditional Suit Sets with Kota Doria Dupattas
+              </p>
             </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-              {data.products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <Button variant="outline" asChild className="bg-white w-full sm:w-auto">
+              <Link href="/category/suit">
+                VIEW ALL
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
-        </section>
-      ))}
+          
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            {products.filter(p => p.category === 'suit' && p.subcategory === 'cotton').slice(0, 4).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* POPULAR MAHESHWARI SILK SUITS Collection */}
+      <section className="py-10 sm:py-14 md:py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-0">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
+                POPULAR MAHESHWARI SILK SUITS
+              </h2>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Luxurious Maheswari Silk Suit Sets with traditional motifs
+              </p>
+            </div>
+            <Button variant="outline" asChild className="bg-white w-full sm:w-auto">
+              <Link href="/category/suit">
+                VIEW ALL
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            {products.filter(p => p.category === 'suit' && p.subcategory === 'silk').slice(0, 4).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* LINEN SAREE COLLECTION */}
+      <section className="py-10 sm:py-14 md:py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-0">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
+                LINEN SAREE COLLECTION
+              </h2>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Comfortable and elegant Linen Sarees for every occasion
+              </p>
+            </div>
+            <Button variant="outline" asChild className="bg-white w-full sm:w-auto">
+              <Link href="/category/sarees">
+                VIEW ALL
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            {products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(0, 4).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* KOTA DORIA SAREE Collection */}
+      <section className="py-10 sm:py-14 md:py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-0">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
+                KOTA DORIA SAREE
+              </h2>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Traditional Kota Doria Sarees with intricate handwoven patterns
+              </p>
+            </div>
+            <Button variant="outline" asChild className="bg-white w-full sm:w-auto">
+              <Link href="/category/sarees">
+                VIEW ALL
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            {products.filter(p => p.category === 'sarees' && p.subcategory === 'silk').slice(0, 4).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* COTTON SUIT SET WITH COTTON DUPATTA Collection */}
+      <section className="py-10 sm:py-14 md:py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-0">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
+                COTTON SUIT SET WITH COTTON DUPATTA
+              </h2>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Comfortable and stylish Cotton Suit Sets with matching dupattas
+              </p>
+            </div>
+            <Button variant="outline" asChild className="bg-white w-full sm:w-auto">
+              <Link href="/category/suit">
+                VIEW ALL
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            {products.filter(p => p.category === 'suit' && p.subcategory === 'cotton').slice(4, 8).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CHIFFON DUPATTA SUIT SETS Collection */}
+      <section className="py-10 sm:py-14 md:py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-0">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
+                CHIFFON DUPATTA SUIT SETS
+              </h2>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Elegant Suit Sets with beautiful Chiffon Dupattas
+              </p>
+            </div>
+            <Button variant="outline" asChild className="bg-white w-full sm:w-auto">
+              <Link href="/category/suit">
+                VIEW ALL
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            {products.filter(p => p.category === 'suit' && p.subcategory === 'chiffon').slice(0, 4).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* MAHESHWARI SILK SAREE Collection */}
+      <section className="py-10 sm:py-14 md:py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-0">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
+                MAHESHWARI SILK SAREE
+              </h2>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Handpicked collection of our finest Maheswari Silk Sarees
+              </p>
+            </div>
+            <Button variant="outline" asChild className="bg-white w-full sm:w-auto">
+              <Link href="/category/sarees">
+                VIEW ALL
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            {products.filter(p => p.category === 'sarees' && p.subcategory === 'silk').slice(0, 4).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CHANDERI SILK BAGRU PRINT SAREE Collection */}
+      <section className="py-10 sm:py-14 md:py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-0">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
+                CHANDERI SILK BAGRU PRINT SAREE
+              </h2>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Exquisite Chanderi Silk Sarees with beautiful Zari borders
+              </p>
+            </div>
+            <Button variant="outline" asChild className="bg-white w-full sm:w-auto">
+              <Link href="/category/sarees">
+                VIEW ALL
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            {products.filter(p => p.category === 'sarees' && p.subcategory === 'silk').slice(4, 8).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* COTTON SAREE COLLECTION */}
+      <section className="py-10 sm:py-14 md:py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-0">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
+                COTTON SAREE COLLECTION
+              </h2>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Comfortable and stylish Cotton Sarees for daily wear
+              </p>
+            </div>
+            <Button variant="outline" asChild className="bg-white w-full sm:w-auto">
+              <Link href="/category/sarees">
+                VIEW ALL
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            {products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(8, 12).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
 
       
 
