@@ -10,7 +10,6 @@ import { API_ENDPOINTS } from '@/lib/constants';
 // Static navigation items that appear before categories
 const STATIC_NAV_ITEMS = [
   { name: 'Home', href: '/', id: 'home' },
-  { name: 'Trending', href: '/trending', id: 'trending' },
 ];
 
 // Default categories to show while loading
@@ -20,56 +19,47 @@ const DEFAULT_CATEGORIES = [
     name: 'Sarees',
     slug: 'sarees',
     subcategories: [
-      { id: '1-1', name: 'Cotton Sarees', slug: 'cotton-sarees' },
-      { id: '1-2', name: 'Silk Sarees', slug: 'silk-sarees' },
-      { id: '1-3', name: 'Printed Sarees', slug: 'printed-sarees' },
+      { id: '1-1', name: 'Cotton mul mul saree', slug: 'cotton-mul-mul-saree' },
+      { id: '1-2', name: 'Cotton linen saree', slug: 'cotton-linen-saree' },
+      { id: '1-3', name: 'Kota doriya saree', slug: 'kota-doriya-saree' },
+      { id: '1-4', name: 'Chanderi silk saree', slug: 'chanderi-silk-saree' },
+      { id: '1-5', name: 'Maheshwari silk saree', slug: 'maheshwari-silk-saree' },
     ],
   },
   {
     id: '2',
-    name: 'Suit Sets',
-    slug: 'suit-sets',
+    name: 'Suit',
+    slug: 'suit',
     subcategories: [
-      { id: '2-1', name: 'Anarkali Suits', slug: 'anarkali-suits' },
-      { id: '2-2', name: 'Palazzo Suits', slug: 'palazzo-suits' },
+      { id: '2-1', name: 'Cotton suit with Mul dupatta', slug: 'cotton-suit-mul-dupatta' },
+      { id: '2-2', name: 'Cotton suit with chiffon dupatta', slug: 'cotton-suit-chiffon-dupatta' },
+      { id: '2-3', name: 'Cotton suit with Kota doriya duppata', slug: 'cotton-suit-kota-doriya-dupatta' },
+      { id: '2-4', name: 'Kota doriya suit', slug: 'kota-doriya-suit' },
+      { id: '2-5', name: 'Chanderi silk suit', slug: 'chanderi-silk-suit' },
+      { id: '2-6', name: 'Maheshwari silk suit', slug: 'maheshwari-silk-suit' },
+      { id: '2-7', name: 'Cotton linen suit', slug: 'cotton-linen-suit' },
     ],
   },
   {
     id: '3',
-    name: 'Dress Material',
-    slug: 'dress-material',
-    subcategories: [
-      { id: '3-1', name: 'Cotton Dress Material', slug: 'cotton-dress-material' },
-      { id: '3-2', name: 'Silk Dress Material', slug: 'silk-dress-material' },
-    ],
+    name: 'Best Sellers',
+    slug: 'best-sellers',
+    subcategories: [],
   },
   {
     id: '4',
-    name: 'Dupattas',
-    slug: 'dupattas',
-    subcategories: [
-      { id: '4-1', name: 'Cotton Dupattas', slug: 'cotton-dupattas' },
-      { id: '4-2', name: 'Silk Dupattas', slug: 'silk-dupattas' },
-    ],
+    name: 'Hand Bags',
+    slug: 'hand-bags',
+    subcategories: [],
   },
   {
     id: '5',
-    name: 'Bedsheets',
-    slug: 'bedsheets',
+    name: 'More',
+    slug: 'more',
     subcategories: [
-      { id: '5-1', name: 'Single Bedsheets', slug: 'single-bedsheets' },
-      { id: '5-2', name: 'Double Bedsheets', slug: 'double-bedsheets' },
-    ],
-  },
-  {
-    id: '6',
-    name: 'Stitched Collection',
-    slug: 'stitched-collection',
-    subcategories: [
-      { id: '6-1', name: 'Ready to Wear Sarees', slug: 'ready-to-wear-sarees' },
-      { id: '6-2', name: 'Stitched Suits', slug: 'stitched-suits' },
-      { id: '6-3', name: 'Stitched Blouses', slug: 'stitched-blouses' },
-      { id: '6-4', name: 'Stitched Lehengas', slug: 'stitched-lehengas' },
+      { id: '5-1', name: 'About', slug: 'about' },
+      { id: '5-2', name: 'Offers', slug: 'offers' },
+      { id: '5-3', name: 'Benefits', slug: 'benefits' },
     ],
   },
 ];
@@ -111,13 +101,11 @@ export function MegaMenu({ isMobile = false }: MegaMenuProps) {
           <Link
             key={item.id}
             href={item.href}
-            className="block py-2 px-2 text-sm text-gray-600 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors"
+            className="block py-2 px-2 text-sm  text-gray-900 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors"
           >
             {item.name}
           </Link>
         ))}
-        {/* Separator */}
-        <div className="border-t border-gray-200 my-2"></div>
         {categories.map((category) => (
           <div key={category.id}>
             <div className="flex items-center justify-between">
