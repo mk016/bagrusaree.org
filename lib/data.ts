@@ -1,4 +1,4 @@
-import { Product, Order, ShippingMethod } from './types';
+import { Product, Order, ShippingMethod, Category } from './types';
 import { API_ENDPOINTS } from './constants';
 import localData from '../data/data.json';
 
@@ -95,11 +95,11 @@ export async function getProductsBySubcategory(category: string, subcategory: st
 // Get categories from local data
 export const getCategories = async (): Promise<Category[]> => {
   const cacheKey = 'categories_local';
-  const cached = getCached(cacheKey);
+  const cached = getCached<Category[]>(cacheKey);
   if (cached) return cached;
 
   try {
-    const categories = [
+    const categories: Category[] = [
       {
         id: 'sarees',
         name: 'Sarees',
@@ -108,12 +108,10 @@ export const getCategories = async (): Promise<Category[]> => {
         image: '/assets/sarees/saree1.jpeg',
         featured: true,
         order: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         subcategories: [
-          { id: 'cotton', name: 'Cotton Sarees', slug: 'cotton' },
-          { id: 'silk', name: 'Silk Sarees', slug: 'silk' },
-          { id: 'chiffon', name: 'Chiffon Sarees', slug: 'chiffon' }
+          { id: 'cotton', name: 'Cotton Sarees', slug: 'cotton', categoryId: 'sarees', order: 1 },
+          { id: 'silk', name: 'Silk Sarees', slug: 'silk', categoryId: 'sarees', order: 2 },
+          { id: 'chiffon', name: 'Chiffon Sarees', slug: 'chiffon', categoryId: 'sarees', order: 3 }
         ],
       },
       {
@@ -124,12 +122,10 @@ export const getCategories = async (): Promise<Category[]> => {
         image: '/assets/suit/suit2.webp',
         featured: true,
         order: 2,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         subcategories: [
-          { id: 'cotton', name: 'Cotton Suits', slug: 'cotton' },
-          { id: 'silk', name: 'Silk Suits', slug: 'silk' },
-          { id: 'chiffon', name: 'Chiffon Suits', slug: 'chiffon' }
+          { id: 'cotton', name: 'Cotton Suits', slug: 'cotton', categoryId: 'suit', order: 1 },
+          { id: 'silk', name: 'Silk Suits', slug: 'silk', categoryId: 'suit', order: 2 },
+          { id: 'chiffon', name: 'Chiffon Suits', slug: 'chiffon', categoryId: 'suit', order: 3 }
         ],
       },
       {
@@ -140,12 +136,10 @@ export const getCategories = async (): Promise<Category[]> => {
         image: '/assets/chiffon_dupatta/dupatta1.webp',
         featured: false,
         order: 3,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         subcategories: [
-          { id: 'cotton', name: 'Cotton Dupattas', slug: 'cotton' },
-          { id: 'silk', name: 'Silk Dupattas', slug: 'silk' },
-          { id: 'chiffon', name: 'Chiffon Dupattas', slug: 'chiffon' }
+          { id: 'cotton', name: 'Cotton Dupattas', slug: 'cotton', categoryId: 'dupattas', order: 1 },
+          { id: 'silk', name: 'Silk Dupattas', slug: 'silk', categoryId: 'dupattas', order: 2 },
+          { id: 'chiffon', name: 'Chiffon Dupattas', slug: 'chiffon', categoryId: 'dupattas', order: 3 }
         ],
       }
     ];
