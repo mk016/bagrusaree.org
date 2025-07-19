@@ -262,19 +262,19 @@ export function Header() {
               <div className="absolute top-full left-0 z-50 mt-1 w-64 bg-white border rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                 <div className="p-4">
                   <div className="grid grid-cols-1 gap-2">
-                    <Link href="/category/sarees/cotton-mul-mul-saree" className="block py-2 px-3 font-bold text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
+                    <Link href="/category/sarees" className="block py-2 px-3 font-bold text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
                       Cotton mul mul saree
                     </Link>
-                    <Link href="/category/sarees/cotton-linen-saree" className="block py-2 px-3 font-bold text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
+                    <Link href="/category/sarees" className="block py-2 px-3 font-bold text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
                       Cotton linen saree
                     </Link>
-                    <Link href="/category/sarees/kota-doriya-saree" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
+                    <Link href="/category/sarees" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
                       Kota doriya saree
                     </Link>
-                    <Link href="/category/sarees/chanderi-silk-saree" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
+                    <Link href="/category/sarees" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
                       Chanderi silk saree
                     </Link>
-                    <Link href="/category/sarees/maheshwari-silk-saree" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
+                    <Link href="/category/sarees" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
                       Maheshwari silk saree
                     </Link>
                   </div>
@@ -291,25 +291,25 @@ export function Header() {
               <div className="absolute top-full left-0 z-50 mt-1 w-64 bg-white border rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                 <div className="p-4">
                   <div className="grid grid-cols-1 gap-2">
-                    <Link href="/category/suit/cotton-suit-mul-dupatta" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
+                    <Link href="/category/suit" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
                       Cotton suit with Mul dupatta
                     </Link>
-                    <Link href="/category/suit/cotton-suit-chiffon-dupatta" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
+                    <Link href="/category/suit" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
                       Cotton suit with chiffon dupatta
                     </Link>
-                    <Link href="/category/suit/cotton-suit-kota-doriya-dupatta" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
+                    <Link href="/category/suit" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
                       Cotton suit with Kota doriya dupatta
                     </Link>
-                    <Link href="/category/suit/kota-doriya-suit" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
+                    <Link href="/category/suit" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
                       Kota doriya suit
                     </Link>
-                    <Link href="/category/suit/chanderi-silk-suit" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
+                    <Link href="/category/suit" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
                       Chanderi silk suit
                     </Link>
-                    <Link href="/category/suit/maheshwari-silk-suit" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
+                    <Link href="/category/suit" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
                       Maheshwari silk suit
                     </Link>
-                    <Link href="/category/suit/cotton-linen-suit" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
+                    <Link href="/category/suit" className="block py-2 px-3 text-sm text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors">
                       Cotton linen suit
                     </Link>
                   </div>
@@ -317,12 +317,12 @@ export function Header() {
               </div>
             </div>
             
-            <Link href="/category/best-sellers" className="text-sm font-medium font-bold text-gray-700 hover:text-indigo-600 transition-colors">
+            <span  className="text-sm font-medium font-bold text-gray-700 hover:text-indigo-600 transition-colors">
               Best Sellers
-            </Link>
-            <Link href="/category/hand-bags" className="text-sm font-medium font-bold text-gray-700 hover:text-indigo-600 transition-colors">
+            </span>
+            <span className="text-sm font-medium font-bold text-gray-700 hover:text-indigo-600 transition-colors">
               Hand Bags
-            </Link>
+            </span>
             
             {/* More with Dropdown */}
             <div className="relative group">
