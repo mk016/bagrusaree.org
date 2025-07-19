@@ -18,7 +18,7 @@ import { Plus, Edit, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Default categories for admin panel
-const DEFAULT_CATEGORIES_FOR_ADMIN = [
+const DEFAULT_CATEGORIES_FOR_ADMIN: Category[] = [
   {
     id: '1',
     name: 'Sarees',
