@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Filter, Grid, List, X } from 'lucide-react';
+import { Search, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,7 +16,7 @@ import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
 import { CATEGORIES } from '@/lib/constants';
-import { getProducts } from '@/lib/product-data';
+import { getAllProducts } from '@/lib/data';
 import { Product, ProductCategoryType } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 
@@ -26,7 +26,7 @@ export default function ProductsPage() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'newest' | 'price-low' | 'price-high' | 'name'>('newest');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
 
@@ -34,7 +34,7 @@ export default function ProductsPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const fetchedProducts = await getProducts();
+        const fetchedProducts = await getAllProducts();
         setProducts(fetchedProducts);
       } catch (e: any) {
         console.error("Fetching error:", e);
@@ -308,23 +308,7 @@ export default function ProductsPage() {
                   </SelectContent>
                 </Select>
 
-                {/* View Mode Toggle */}
-                <div className="flex border rounded-xl">
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('grid')}
-                  >
-                    <Grid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                </div>
+
               </div>
             </div>
 
@@ -337,13 +321,7 @@ export default function ProductsPage() {
                       {categoryName} ({products.length})
                     </AccordionTrigger>
                     <AccordionContent className="pt-4">
-                      <div
-                        className={
-                          viewMode === 'grid'
-                            ? 'grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4'
-                            : 'space-y-4'
-                        }
-                      >
+                      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
                         {products.map((product: Product) => ( // Explicitly type product here
                           <ProductCard key={product.id} product={product} />
                         ))}
