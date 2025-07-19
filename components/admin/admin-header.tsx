@@ -37,11 +37,16 @@ export function AdminHeader({ onMenuToggle, title = "Dashboard" }: AdminHeaderPr
             <Menu className="h-5 w-5" />
           </Button>
           
-          <div>
-            <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">{title}</h1>
-            <p className="text-sm text-gray-500 hidden sm:block">
-              Welcome back! Here's what's happening with your store today.
-            </p>
+          <div className="flex items-center space-x-3">
+            <div className="h-8 w-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">B</span>
+            </div>
+            <div>
+              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">BagruSarees</h1>
+              <p className="text-sm text-gray-500 hidden sm:block">
+                Admin Dashboard
+              </p>
+            </div>
           </div>
         </div>
 
