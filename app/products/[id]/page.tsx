@@ -16,7 +16,7 @@ import { CartSidebar } from '@/components/cart/cart-sidebar';
 import { BuyNowButton } from '@/components/products/buy-now-button';
 import { FloatingWhatsApp } from '@/components/ui/floating-whatsapp';
 import { useCartStore, useWishlistStore } from '@/lib/store';
-import { getAllProducts } from '@/lib/data';
+import { getAllProducts, getProductById } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { Product } from '@/lib/types';
 import { toast } from 'sonner';
@@ -188,7 +188,7 @@ export default function ProductDetailPage() {
               <img
                 src={product.images[selectedImage]}
                 alt={product.name}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
               />
               {product.images.length > 1 && (
                 <>
@@ -260,11 +260,11 @@ export default function ProductDetailPage() {
               <div className="flex items-center space-x-3 mb-4">
                 {product.comparePrice && (
                   <span className="text-lg text-gray-500 line-through">
-                    Rs. {product.comparePrice.toLocaleString()}.00
+                    ₹{Math.round(product.comparePrice).toLocaleString()}
                   </span>
                 )}
                 <span className="text-2xl font-bold text-gray-900">
-                  Rs. {product.price.toLocaleString()}.00
+                  ₹{Math.round(product.price).toLocaleString()}
                 </span>
                 {product.comparePrice && (
                   <Badge variant="destructive" className="bg-red-600">
@@ -379,36 +379,7 @@ Please confirm availability and proceed with the order. Thank you!`;
                 BUY IT NOW
               </Button>
               
-              <Button
-                className="w-full bg-green-600 text-white hover:bg-green-700 flex items-center justify-center gap-2"
-                size="lg"
-                onClick={() => {
-                  const message = `Hi! I'm interested in ordering this product:
 
-🛍️ *${product.name}*
-📦 Product Code: ${product.sku}
-💰 Price: Rs. ${product.price.toLocaleString()}.00
-📏 Quantity: ${quantity}
-
-Product Details:
-• Saree Length: 5.5 Mtr
-• Saree Width: 44 Inch
-• Saree Fabric: Chanderi Silk
-• With Blouse: Yes (Length: 0.8 Mtr)
-• Blouse Fabric: Chanderi Silk
-• Print: Handblock
-• Wash Care: Hand wash separately
-
-Please confirm availability and proceed with the order. Thank you!`;
-                  
-                  const whatsappUrl = `https://wa.me/917665629448?text=${encodeURIComponent(message)}`;
-                  window.open(whatsappUrl, '_blank');
-                }}
-                disabled={product.stock === 0}
-              >
-                <MessageCircle className="h-5 w-5" />
-                ORDER VIA WHATSAPP
-              </Button>
             </div>
 
             {/* Product Specifications Grid */}
@@ -671,9 +642,9 @@ Please confirm availability and proceed with the order. Thank you!`;
           </TabsContent>
         </Tabs>
 
-        {/* Related Products */}
+        {/* Related Products - Desktop Grid */}
         {relatedProducts.length > 0 && (
-          <div>
+          <div className="hidden lg:block">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {relatedProducts.map((relatedProduct: Product) => (
@@ -685,6 +656,24 @@ Please confirm availability and proceed with the order. Thank you!`;
             </div>
           </div>
         )}
+
+        {/* Related Products - Mobile Scrollable */}
+        {relatedProducts.length > 0 && (
+          <div className="lg:hidden">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Related Products</h2>
+            <div className="flex overflow-x-auto space-x-4 pb-4 scrollbar-hide">
+              {relatedProducts.map((relatedProduct: Product) => (
+                <div key={relatedProduct.id} className="flex-shrink-0 w-64">
+                  <ProductCard 
+                    product={relatedProduct}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+
       </div>
 
       <Footer />
