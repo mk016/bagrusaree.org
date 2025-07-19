@@ -119,8 +119,8 @@ function ProductCard({ product, className }: ProductCardProps) {
         <div className="absolute top-3 right-3 flex flex-col space-y-2 pointer-events-none z-10">
           {/* Sale Badge */}
           {discountPercentage > 0 && (
-            <div className="bg-black text-white text-xs font-medium px-2 py-1 rounded-none">
-              Sale
+            <div className="bg-red-600 text-white text-xs font-medium px-2 py-1 rounded-none">
+              {discountPercentage}% OFF
             </div>
           )}
           
@@ -199,14 +199,14 @@ function ProductCard({ product, className }: ProductCardProps) {
               {/* Original and Sale Price on same line */}
               <div className="flex items-center justify-center space-x-2">
                 {/* Compare Price (Original Price) */}
-                {product.comparePrice && (
+                {product.comparePrice && product.comparePrice > product.price && (
                   <span className="text-sm text-gray-500 line-through">
-                    Rs. {product.comparePrice.toLocaleString()}.00
+                    ₹{Math.round(product.comparePrice).toLocaleString()}
                   </span>
                 )}
                 {/* Our Sale Price */}
                 <span className="text-base font-semibold text-gray-900">
-                  Rs. {product.price.toLocaleString()}.00
+                  ₹{Math.round(product.price).toLocaleString()}
                 </span>
               </div>
               
