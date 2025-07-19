@@ -31,7 +31,7 @@ export interface Banner {
   createdBy: string;
 }
 
-export type ProductCategoryType = 'sarees' | 'suit-sets' | 'dress-material' | 'dupattas' | 'bedsheets' | 'bags' | 'men\'s-collection' | 'home' | 'uncategorized';
+export type ProductCategoryType = 'sarees' | 'suit' | 'suit-sets' | 'dress-material' | 'dupattas' | 'bedsheets' | 'bags' | 'men\'s-collection' | 'home' | 'uncategorized';
 
 export interface Product {
   id: string;
