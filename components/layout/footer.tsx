@@ -142,15 +142,14 @@ export function Footer() {
                 <MapPin className="h-5 w-5 text-indigo-400 mt-0.5" />
                 <div>
                   <p className="text-gray-400 text-sm">
-                    123 Fashion Street<br />
-                    Mumbai, Maharashtra 400001<br />
-                    India
+                    Bagru, Jaipur<br />
+                    Rajasthan, India
                   </p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="h-5 w-5 text-indigo-400" />
-                <p className="text-gray-400">+91 98765 43210</p>
+                <p className="text-gray-400">+91 76656 29448</p>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-indigo-400" />
