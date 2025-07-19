@@ -28,76 +28,63 @@ const DEFAULT_CATEGORIES_FOR_ADMIN = [
     featured: true,
     order: 1,
     subcategories: [
-      { id: '1-1', name: 'Cotton Sarees', slug: 'cotton-sarees', description: 'Comfortable cotton sarees', image: '', categoryId: '1', order: 1 },
-      { id: '1-2', name: 'Silk Sarees', slug: 'silk-sarees', description: 'Luxurious silk sarees', image: '', categoryId: '1', order: 2 },
-      { id: '1-3', name: 'Printed Sarees', slug: 'printed-sarees', description: 'Beautiful printed sarees', image: '', categoryId: '1', order: 3 },
+      { id: '1-1', name: 'Cotton mul mul saree', slug: 'cotton-mul-mul-saree', description: 'Comfortable cotton mul mul sarees', image: '', categoryId: '1', order: 1 },
+      { id: '1-2', name: 'Cotton linen saree', slug: 'cotton-linen-saree', description: 'Elegant cotton linen sarees', image: '', categoryId: '1', order: 2 },
+      { id: '1-3', name: 'Kota doriya saree', slug: 'kota-doriya-saree', description: 'Beautiful Kota doriya sarees', image: '', categoryId: '1', order: 3 },
+      { id: '1-4', name: 'Chanderi silk saree', slug: 'chanderi-silk-saree', description: 'Luxurious Chanderi silk sarees', image: '', categoryId: '1', order: 4 },
+      { id: '1-5', name: 'Maheshwari silk saree', slug: 'maheshwari-silk-saree', description: 'Traditional Maheshwari silk sarees', image: '', categoryId: '1', order: 5 },
     ],
   },
   {
     id: '2',
-    name: 'Suit Sets',
-    slug: 'suit-sets',
+    name: 'Suit',
+    slug: 'suit',
     description: 'Complete suit sets for every occasion',
     image: '/assets/suit/suit2.webp',
     featured: true,
     order: 2,
     subcategories: [
-      { id: '2-1', name: 'Anarkali Suits', slug: 'anarkali-suits', description: 'Elegant Anarkali suits', image: '', categoryId: '2', order: 1 },
-      { id: '2-2', name: 'Palazzo Suits', slug: 'palazzo-suits', description: 'Comfortable palazzo suits', image: '', categoryId: '2', order: 2 },
+      { id: '2-1', name: 'Cotton suit with Mul dupatta', slug: 'cotton-suit-mul-dupatta', description: 'Cotton suits with mul dupatta', image: '', categoryId: '2', order: 1 },
+      { id: '2-2', name: 'Cotton suit with chiffon dupatta', slug: 'cotton-suit-chiffon-dupatta', description: 'Cotton suits with chiffon dupatta', image: '', categoryId: '2', order: 2 },
+      { id: '2-3', name: 'Cotton suit with Kota doriya duppata', slug: 'cotton-suit-kota-doriya-dupatta', description: 'Cotton suits with Kota doriya dupatta', image: '', categoryId: '2', order: 3 },
+      { id: '2-4', name: 'Kota doriya suit', slug: 'kota-doriya-suit', description: 'Elegant Kota doriya suits', image: '', categoryId: '2', order: 4 },
+      { id: '2-5', name: 'Chanderi silk suit', slug: 'chanderi-silk-suit', description: 'Luxurious Chanderi silk suits', image: '', categoryId: '2', order: 5 },
+      { id: '2-6', name: 'Maheshwari silk suit', slug: 'maheshwari-silk-suit', description: 'Traditional Maheshwari silk suits', image: '', categoryId: '2', order: 6 },
+      { id: '2-7', name: 'Cotton linen suit', slug: 'cotton-linen-suit', description: 'Comfortable cotton linen suits', image: '', categoryId: '2', order: 7 },
     ],
   },
   {
     id: '3',
-    name: 'Dress Material',
-    slug: 'dress-material',
-    description: 'Unstitched dress materials',
-    image: '/assets/chiffon_dupatta/dupatta1.webp',
-    featured: false,
+    name: 'Best Sellers',
+    slug: 'best-sellers',
+    description: 'Our most popular and trending products',
+    image: '/assets/Banner/Banner2.webp',
+    featured: true,
     order: 3,
-    subcategories: [
-      { id: '3-1', name: 'Cotton Dress Material', slug: 'cotton-dress-material', description: 'Cotton fabric for dresses', image: '', categoryId: '3', order: 1 },
-      { id: '3-2', name: 'Silk Dress Material', slug: 'silk-dress-material', description: 'Silk fabric for dresses', image: '', categoryId: '3', order: 2 },
-    ],
+    subcategories: [],
   },
   {
     id: '4',
-    name: 'Dupattas',
-    slug: 'dupattas',
-    description: 'Beautiful dupattas and scarves',
-    image: '/assets/chiffon_dupatta/dupatta2.webp',
+    name: 'Hand Bags',
+    slug: 'hand-bags',
+    description: 'Stylish handbags and accessories',
+    image: '/assets/Banner/Banner3.webp',
     featured: false,
     order: 4,
-    subcategories: [
-      { id: '4-1', name: 'Cotton Dupattas', slug: 'cotton-dupattas', description: 'Cotton dupattas', image: '', categoryId: '4', order: 1 },
-      { id: '4-2', name: 'Silk Dupattas', slug: 'silk-dupattas', description: 'Silk dupattas', image: '', categoryId: '4', order: 2 },
-    ],
+    subcategories: [],
   },
   {
     id: '5',
-    name: 'Bedsheets',
-    slug: 'bedsheets',
-    description: 'Comfortable bedsheets and home textiles',
-    image: '/assets/Banner/Banner1.webp',
+    name: 'More',
+    slug: 'more',
+    description: 'Additional information and offers',
+    image: '/assets/logo.png',
     featured: false,
     order: 5,
     subcategories: [
-      { id: '5-1', name: 'Single Bedsheets', slug: 'single-bedsheets', description: 'Single bed sheets', image: '', categoryId: '5', order: 1 },
-      { id: '5-2', name: 'Double Bedsheets', slug: 'double-bedsheets', description: 'Double bed sheets', image: '', categoryId: '5', order: 2 },
-    ],
-  },
-  {
-    id: '6',
-    name: 'Stitched Collection',
-    slug: 'stitched-collection',
-    description: 'Ready-to-wear stitched garments',
-    image: '/assets/suit/suit3.webp',
-    featured: true,
-    order: 6,
-    subcategories: [
-      { id: '6-1', name: 'Ready to Wear Sarees', slug: 'ready-to-wear-sarees', description: 'Pre-stitched sarees', image: '', categoryId: '6', order: 1 },
-      { id: '6-2', name: 'Stitched Suits', slug: 'stitched-suits', description: 'Ready-to-wear suits', image: '', categoryId: '6', order: 2 },
-      { id: '6-3', name: 'Stitched Blouses', slug: 'stitched-blouses', description: 'Ready-to-wear blouses', image: '', categoryId: '6', order: 3 },
-      { id: '6-4', name: 'Stitched Lehengas', slug: 'stitched-lehengas', description: 'Ready-to-wear lehengas', image: '', categoryId: '6', order: 4 },
+      { id: '5-1', name: 'About', slug: 'about', description: 'About our company', image: '', categoryId: '5', order: 1 },
+      { id: '5-2', name: 'Offers', slug: 'offers', description: 'Current offers and discounts', image: '', categoryId: '5', order: 2 },
+      { id: '5-3', name: 'Benefits', slug: 'benefits', description: 'Customer benefits and features', image: '', categoryId: '5', order: 3 },
     ],
   },
 ];
@@ -199,6 +186,17 @@ export default function CategoriesPage() {
   // Category CRUD functions
   const handleCreateCategory = async () => {
     try {
+      // Validate form
+      if (!categoryForm.name.trim()) {
+        toast.error('Category name is required');
+        return;
+      }
+
+      if (!categoryForm.slug.trim()) {
+        toast.error('Category slug is required');
+        return;
+      }
+
       const response = await fetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -265,6 +263,22 @@ export default function CategoriesPage() {
   // Subcategory CRUD functions
   const handleCreateSubcategory = async () => {
     try {
+      // Validate form
+      if (!subcategoryForm.name.trim()) {
+        toast.error('Subcategory name is required');
+        return;
+      }
+
+      if (!subcategoryForm.slug.trim()) {
+        toast.error('Subcategory slug is required');
+        return;
+      }
+
+      if (!subcategoryForm.categoryId) {
+        toast.error('Please select a parent category');
+        return;
+      }
+
       const response = await fetch(`/api/categories/${subcategoryForm.categoryId}/subcategories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -556,7 +570,7 @@ export default function CategoriesPage() {
 
       {/* Category Dialog */}
       <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
               {editingCategory ? 'Edit Category' : 'Add New Category'}
@@ -564,7 +578,7 @@ export default function CategoriesPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="category-name">Name</Label>
+              <Label htmlFor="category-name">Category Name *</Label>
               <Input
                 id="category-name"
                 value={categoryForm.name}
@@ -573,41 +587,49 @@ export default function CategoriesPage() {
                   setCategoryForm(prev => ({ 
                     ...prev, 
                     name,
-                    slug: generateSlug(name)
+                    slug: generateSlug(name) // Auto-generate slug
                   }));
                 }}
-                placeholder="Category name"
+                placeholder="e.g., Sarees, Suit Sets"
+                required
               />
             </div>
+            
             <div className="grid gap-2">
-              <Label htmlFor="category-slug">Slug</Label>
+              <Label htmlFor="category-slug">Slug *</Label>
               <Input
                 id="category-slug"
                 value={categoryForm.slug}
                 onChange={(e) => setCategoryForm(prev => ({ ...prev, slug: e.target.value }))}
-                placeholder="category-slug"
+                placeholder="e.g., sarees, suit-sets"
+                required
               />
+              <p className="text-xs text-gray-500">URL-friendly version of the name</p>
             </div>
+            
             <div className="grid gap-2">
               <Label htmlFor="category-description">Description</Label>
               <Textarea
                 id="category-description"
                 value={categoryForm.description}
                 onChange={(e) => setCategoryForm(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Category description"
+                placeholder="Brief description of this category"
+                rows={3}
               />
             </div>
+            
             <div className="grid gap-2">
               <Label htmlFor="category-image">Image URL</Label>
               <Input
                 id="category-image"
                 value={categoryForm.image}
                 onChange={(e) => setCategoryForm(prev => ({ ...prev, image: e.target.value }))}
-                placeholder="https://..."
+                placeholder="https://example.com/image.jpg"
               />
             </div>
+            
             <div className="grid gap-2">
-              <Label htmlFor="category-order">Order</Label>
+              <Label htmlFor="category-order">Display Order</Label>
               <Input
                 id="category-order"
                 type="number"
@@ -616,21 +638,23 @@ export default function CategoriesPage() {
                 placeholder="0"
               />
             </div>
+            
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="category-featured"
                 checked={categoryForm.featured}
                 onCheckedChange={(checked) => setCategoryForm(prev => ({ ...prev, featured: !!checked }))}
               />
-              <Label htmlFor="category-featured">Featured category</Label>
+              <Label htmlFor="category-featured">Featured Category</Label>
             </div>
           </div>
+          
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setCategoryDialogOpen(false)}>
               Cancel
             </Button>
             <Button onClick={editingCategory ? handleUpdateCategory : handleCreateCategory}>
-              {editingCategory ? 'Update' : 'Create'}
+              {editingCategory ? 'Update Category' : 'Create Category'}
             </Button>
           </div>
         </DialogContent>
@@ -638,7 +662,7 @@ export default function CategoriesPage() {
 
       {/* Subcategory Dialog */}
       <Dialog open={subcategoryDialogOpen} onOpenChange={setSubcategoryDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
               {editingSubcategory ? 'Edit Subcategory' : 'Add New Subcategory'}
@@ -646,7 +670,7 @@ export default function CategoriesPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="subcategory-category">Category</Label>
+              <Label htmlFor="subcategory-category">Parent Category *</Label>
               <Select
                 value={subcategoryForm.categoryId}
                 onValueChange={(value) => setSubcategoryForm(prev => ({ ...prev, categoryId: value }))}
@@ -663,8 +687,9 @@ export default function CategoriesPage() {
                 </SelectContent>
               </Select>
             </div>
+            
             <div className="grid gap-2">
-              <Label htmlFor="subcategory-name">Name</Label>
+              <Label htmlFor="subcategory-name">Subcategory Name *</Label>
               <Input
                 id="subcategory-name"
                 value={subcategoryForm.name}
@@ -673,41 +698,49 @@ export default function CategoriesPage() {
                   setSubcategoryForm(prev => ({ 
                     ...prev, 
                     name,
-                    slug: generateSlug(name)
+                    slug: generateSlug(name) // Auto-generate slug
                   }));
                 }}
-                placeholder="Subcategory name"
+                placeholder="e.g., Cotton Sarees, Silk Sarees"
+                required
               />
             </div>
+            
             <div className="grid gap-2">
-              <Label htmlFor="subcategory-slug">Slug</Label>
+              <Label htmlFor="subcategory-slug">Slug *</Label>
               <Input
                 id="subcategory-slug"
                 value={subcategoryForm.slug}
                 onChange={(e) => setSubcategoryForm(prev => ({ ...prev, slug: e.target.value }))}
-                placeholder="subcategory-slug"
+                placeholder="e.g., cotton-sarees, silk-sarees"
+                required
               />
+              <p className="text-xs text-gray-500">URL-friendly version of the name</p>
             </div>
+            
             <div className="grid gap-2">
               <Label htmlFor="subcategory-description">Description</Label>
               <Textarea
                 id="subcategory-description"
                 value={subcategoryForm.description}
                 onChange={(e) => setSubcategoryForm(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Subcategory description"
+                placeholder="Brief description of this subcategory"
+                rows={3}
               />
             </div>
+            
             <div className="grid gap-2">
               <Label htmlFor="subcategory-image">Image URL</Label>
               <Input
                 id="subcategory-image"
                 value={subcategoryForm.image}
                 onChange={(e) => setSubcategoryForm(prev => ({ ...prev, image: e.target.value }))}
-                placeholder="https://..."
+                placeholder="https://example.com/image.jpg"
               />
             </div>
+            
             <div className="grid gap-2">
-              <Label htmlFor="subcategory-order">Order</Label>
+              <Label htmlFor="subcategory-order">Display Order</Label>
               <Input
                 id="subcategory-order"
                 type="number"
@@ -717,12 +750,13 @@ export default function CategoriesPage() {
               />
             </div>
           </div>
+          
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setSubcategoryDialogOpen(false)}>
               Cancel
             </Button>
             <Button onClick={editingSubcategory ? handleUpdateSubcategory : handleCreateSubcategory}>
-              {editingSubcategory ? 'Update' : 'Create'}
+              {editingSubcategory ? 'Update Subcategory' : 'Create Subcategory'}
             </Button>
           </div>
         </DialogContent>
