@@ -19,6 +19,7 @@ import { API_ENDPOINTS } from '@/lib/constants';
 import { getAllProducts, getCategories, getProductsByCategory } from '@/lib/data';
 import { Product } from '@/lib/types';
 import { FloatingWhatsApp } from '@/components/ui/floating-whatsapp';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 // Define the Category type
@@ -47,6 +48,11 @@ export default function CategoryPage() {
   const [subcategories, setSubcategories] = useState<string[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
+  
+  // Filter states
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [outOfStockOnly, setOutOfStockOnly] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -54,6 +60,14 @@ export default function CategoryPage() {
         setLoading(true);
         const fetchedProducts = await getProductsByCategory(categorySlug as string);
         setProducts(fetchedProducts);
+        
+        // Set initial price range based on fetched products
+        if (fetchedProducts.length > 0) {
+          const prices = fetchedProducts.map(p => p.comparePrice || p.price);
+          const minPrice = Math.floor(Math.min(...prices));
+          const maxPrice = Math.ceil(Math.max(...prices));
+          setPriceRange([minPrice, maxPrice]);
+        }
       } catch (err: any) {
         console.error("Failed to fetch products for category page:", err);
         setError("Failed to load products for this category.");
@@ -96,8 +110,25 @@ export default function CategoryPage() {
 
     // Filter by subcategory if selected
     if (selectedSubcategory !== 'all') {
-      filtered = filtered.filter(product => product.subcategory === selectedSubcategory);
+      filtered = filtered.filter(product => {
+        // Check if product subcategory matches the selected subcategory slug
+        return product.subcategory === selectedSubcategory;
+      });
     }
+
+    // Filter by availability
+    if (inStockOnly) {
+      filtered = filtered.filter(product => product.stock > 0);
+    }
+    if (outOfStockOnly) {
+      filtered = filtered.filter(product => product.stock === 0);
+    }
+
+    // Filter by price range
+    filtered = filtered.filter(product => {
+      const price = product.comparePrice || product.price;
+      return price >= priceRange[0] && price <= priceRange[1];
+    });
 
     // Sort products
     switch (sortBy) {
@@ -124,7 +155,7 @@ export default function CategoryPage() {
     }
 
     setFilteredProducts(filtered);
-  }, [products, categorySlug, selectedSubcategory, sortBy]);
+  }, [products, categorySlug, selectedSubcategory, sortBy, inStockOnly, outOfStockOnly, priceRange]);
 
   if (loading || categoryLoading) {
     return (
@@ -196,15 +227,23 @@ export default function CategoryPage() {
                   <h3 className="text-sm font-medium mb-3">AVAILABILITY</h3>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <Checkbox id="in-stock" />
+                      <Checkbox 
+                        id="in-stock" 
+                        checked={inStockOnly}
+                        onCheckedChange={(checked) => setInStockOnly(checked as boolean)}
+                      />
                       <Label htmlFor="in-stock" className="text-sm">
-                        In stock ({filteredProducts.filter(p => p.stock > 0).length})
+                        In stock ({products.filter(p => p.stock > 0).length})
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox id="out-of-stock" />
+                      <Checkbox 
+                        id="out-of-stock" 
+                        checked={outOfStockOnly}
+                        onCheckedChange={(checked) => setOutOfStockOnly(checked as boolean)}
+                      />
                       <Label htmlFor="out-of-stock" className="text-sm">
-                        Out of stock ({filteredProducts.filter(p => p.stock === 0).length})
+                        Out of stock ({products.filter(p => p.stock === 0).length})
                       </Label>
                     </div>
                   </div>
@@ -215,15 +254,17 @@ export default function CategoryPage() {
                   <h3 className="text-sm font-medium mb-3">PRICE</h3>
                   <div className="space-y-2">
                     <div className="text-sm text-gray-600">
-                      ₹{Math.min(...filteredProducts.map(p => p.price))} - ₹{Math.max(...filteredProducts.map(p => p.price))}
+                      ₹{Math.round(priceRange[0])} - ₹{Math.round(priceRange[1])}
                     </div>
                     <Slider
-                      value={[0, Math.max(...filteredProducts.map(p => p.price))]}
-                      max={Math.max(...filteredProducts.map(p => p.price))}
-                      min={0}
+                      value={priceRange}
+                      onValueChange={(value: number[]) => setPriceRange([value[0], value[1]])}
+                      max={Math.max(...products.map(p => p.comparePrice || p.price))}
+                      min={Math.min(...products.map(p => p.comparePrice || p.price))}
                       step={100}
                       className="w-full"
                     />
+
                   </div>
                 </div>
               </CardContent>
@@ -237,8 +278,33 @@ export default function CategoryPage() {
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4">Shop by Style</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {/* All Products Option */}
+                  <Card 
+                      className={
+                      [
+                        "cursor-pointer hover:shadow-md transition-shadow",
+                        selectedSubcategory === 'all' ? "ring-2 ring-blue-500 bg-blue-50" : ""
+                      ].filter(Boolean).join(" ")
+                    }
+                    onClick={() => setSelectedSubcategory('all')}
+                  >
+                    <CardContent className="p-4 text-center">
+                      <h3 className="text-sm font-medium">All Products</h3>
+                    </CardContent>
+                  </Card>
+                  
+                  {/* Subcategory Options */}
                   {category.subcategories.map((subcategory) => (
-                    <Card key={subcategory.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <Card 
+                      key={subcategory.id} 
+                      className={
+                        [
+                          "cursor-pointer hover:shadow-md transition-shadow",
+                          selectedSubcategory === subcategory.slug ? "ring-2 ring-blue-500 bg-blue-50" : ""
+                        ].filter(Boolean).join(" ")
+                      }
+                      onClick={() => setSelectedSubcategory(subcategory.slug)}
+                    >
                       <CardContent className="p-4 text-center">
                         <h3 className="text-sm font-medium">{subcategory.name}</h3>
                       </CardContent>
