@@ -9,7 +9,6 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
-import { FloatingWhatsApp } from '@/components/ui/floating-whatsapp';
 import { getAllProducts, getCategories, getBanners } from '@/lib/data';
 import { Product, Category, CategoryProductGroup } from '@/lib/types';
 import { Banner } from '@prisma/client';
@@ -25,8 +24,8 @@ const statsIcons = {
 
 // Default/fallback data that shows immediately
 const DEFAULT_STATS = [
-  { label: 'Happy Customers', value: '10,000+', icon: Users },
-  { label: 'Products Sold', value: '50,000+', icon: ShoppingCart },
+  { label: 'Happy Customers', value: '1,000+', icon: Users },
+  { label: 'Products Sold', value: '5,000+', icon: ShoppingCart },
   { label: 'Customer Rating', value: '4.9/5', icon: Star },
   { label: 'Years of Trust', value: '5+', icon: TrendingUp },
 ];
@@ -198,10 +197,9 @@ export default function Home() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <CartSidebar />
-      <FloatingWhatsApp />
 
-      {/* Banner Section - Simple clickable banner */}
-      <section className="relative h-[400px] sm:h-[500px] md:h-[600px] overflow-hidden">
+      {/* Banner Section - Enhanced for Mobile & Desktop */}
+      <section className="relative h-[300px] xs:h-[350px] sm:h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden bg-gray-100">
         {banners.length > 0 ? (
           banners.map((banner, index) => (
             <Link 
@@ -211,32 +209,92 @@ export default function Home() {
                 index === currentImage ? 'opacity-100' : 'opacity-0'
               }`}
             >
+              {/* Banner Image */}
               <img
                 src={banner.image || IMAGE_PLACEHOLDER}
                 alt={banner.title}
-                className="h-full w-full object-cover hover:scale-105 transition-transform duration-300"
-                style={{ objectPosition: 'center' }}
+                className="h-full w-full object-cover object-center"
+                loading="eager"
               />
+              
+              {/* Banner Content Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-black/20 to-transparent">
+                <div className="absolute bottom-0 left-0 right-0 p-4 xs:p-6 sm:p-8 md:p-12 text-white">
+                  <div className="max-w-2xl">
+                    <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3">
+                      {banner.title || 'Discover Amazing Products'}
+                    </h2>
+                    {banner.description && (
+                      <p className="text-sm xs:text-base sm:text-lg md:text-xl text-white/90 mb-3 sm:mb-4 hidden xs:block">
+                        {banner.description}
+                      </p>
+                    )}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs xs:text-sm sm:text-base font-medium bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                        Shop Now
+                      </span>
+                      <ArrowRight className="h-4 w-4 xs:h-5 xs:w-5 text-white" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </Link>
           ))
         ) : (
           <Link href="/products" className="absolute inset-0 cursor-pointer">
-            <div className="absolute inset-0 bg-indigo-900">
-              <div className="absolute inset-0 opacity-20" 
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-700">
+              <div className="absolute inset-0 opacity-10" 
                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 1.895 2 2 2z" fill="%23ffffff" fill-opacity="0.1" fill-rule="evenodd"/%3E%3C/svg%3E")' }}></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center text-white p-6">
+
+                  <div className="flex items-center justify-center space-x-2">
+                    <span className="text-xs xs:text-sm sm:text-base font-medium bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                      Explore Products
+                    </span>
+                    <ArrowRight className="h-4 w-4 xs:h-5 xs:w-5 text-white" />
+                  </div>
+                </div>
+              </div>
             </div>
           </Link>
         )}
         
-        {/* Image Indicators */}
+        {/* Navigation Arrows - Desktop Only */}
+        {banners.length > 1 && (
+          <>
+            <button
+              onClick={() => setCurrentImage((prev) => (prev - 1 + banners.length) % banners.length)}
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white p-2 rounded-full transition-all duration-200 hidden sm:flex items-center justify-center z-10"
+              aria-label="Previous banner"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setCurrentImage((prev) => (prev + 1) % banners.length)}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white p-2 rounded-full transition-all duration-200 hidden sm:flex items-center justify-center z-10"
+              aria-label="Next banner"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </>
+        )}
+        
+        {/* Image Indicators - Enhanced */}
         {banners.length > 1 && (
           <div className="absolute bottom-4 xs:bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
             {banners.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentImage(index)}
-                className={`h-2 w-6 xs:w-8 rounded-full transition-colors ${
-                  index === currentImage ? 'bg-white' : 'bg-white/50'
+                className={`h-2 w-6 xs:w-8 rounded-full transition-all duration-200 ${
+                  index === currentImage 
+                    ? 'bg-white shadow-lg scale-110' 
+                    : 'bg-white/50 hover:bg-white/70'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
@@ -249,7 +307,7 @@ export default function Home() {
       {categories.length > 0 && (
         <section className="py-8 bg-white">
           <div className="container mx-auto px-4">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-center text-gray-900 mb-4">
               Shop by Categories
             </h2>
             <div
@@ -294,9 +352,20 @@ export default function Home() {
       {/* Stats Section - Shows immediately */}
       <section className="py-10 sm:py-14 md:py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8">
+          <div 
+            className="flex space-x-4 sm:space-x-8 overflow-x-auto pb-2 justify-center"
+            style={{
+              scrollbarWidth: 'none', // Firefox
+              msOverflowStyle: 'none', // IE 10+
+            }}
+          >
+            <style jsx>{`
+              div::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
             {stats.map((stat, index) => (
-              <div key={index} className="text-center flex flex-col items-center">
+              <div key={index} className="text-center flex-shrink-0 flex flex-col items-center min-w-[120px] sm:min-w-[150px] max-w-[200px]">
                 <div className="flex justify-center mb-2 sm:mb-4">
                   <div className="bg-indigo-100 p-2 sm:p-3 rounded-full">
                     <stat.icon className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
@@ -376,29 +445,7 @@ export default function Home() {
         </section>
       ))}
 
-      {/* Newsletter Section */}
-      <section className="py-10 sm:py-14 md:py-16 bg-indigo-600 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-4">
-            Stay Updated with Latest Trends
-          </h2>
-          <p className="text-indigo-100 mb-6 sm:mb-8 max-w-2xl mx-auto text-sm sm:text-base">
-            Subscribe to our newsletter and be the first to know about new arrivals, 
-            exclusive offers, and fashion tips.
-          </p>
-          <form className="max-w-md mx-auto flex flex-col xs:flex-row gap-2">
-            <input
-              type="email"
-              placeholder="Your email address"
-              className="flex-grow px-4 py-2 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-              required
-            />
-            <Button type="submit" className="bg-white text-indigo-600 hover:bg-gray-100">
-              Subscribe
-            </Button>
-          </form>
-        </div>
-      </section>
+      
 
       <Footer />
     </div>
