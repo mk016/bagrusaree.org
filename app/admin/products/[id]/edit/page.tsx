@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AdminSidebar } from '@/components/admin/admin-sidebar';
+
 import { ProductForm } from '@/components/admin/product-management/product-form';
 import { getProducts } from '@/lib/product-data'; // To fetch a single product from all products
 import { Product } from '@/lib/types';
@@ -49,43 +49,31 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <AdminSidebar />
-        <div className="flex-1 lg:ml-64 p-8 text-center">
-          Loading product details...
-        </div>
+      <div className="w-full p-8 text-center">
+        Loading product details...
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <AdminSidebar />
-        <div className="flex-1 lg:ml-64 p-8 text-center text-red-600">
-          Error: {error}
-        </div>
+      <div className="w-full p-8 text-center text-red-600">
+        Error: {error}
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <AdminSidebar />
-        <div className="flex-1 lg:ml-64 p-8 text-center text-gray-600">
-          Product details could not be loaded.
-        </div>
+      <div className="w-full p-8 text-center text-gray-600">
+        Product details could not be loaded.
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <AdminSidebar />
-      <div className="flex-1 lg:ml-64 p-8">
-        <ProductForm product={product} isEditing={true} onProductSave={handleProductSave} />
-      </div>
+    <div className="w-full p-8">
+      <ProductForm product={product} isEditing={true} onProductSave={handleProductSave} />
     </div>
   );
 }

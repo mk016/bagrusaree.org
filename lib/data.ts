@@ -1,6 +1,15 @@
 import { Product, Order, ShippingMethod, Category } from './types';
 import { API_ENDPOINTS } from './constants';
-import localData from '../data/data.json';
+import { 
+  getAllProducts as getAllProductsFromDb,
+  getProductById as getProductByIdFromDb,
+  getProductsByCategory as getProductsByCategoryFromDb,
+  getProductsBySubcategory as getProductsBySubcategoryFromDb,
+  getCategories as getCategoriesFromDb,
+  searchProducts as searchProductsFromDb,
+  getFeaturedProducts as getFeaturedProductsFromDb,
+  getLowStockProducts as getLowStockProductsFromDb,
+} from './database';
 
 // Simple client-side cache
 const cache = new Map<string, { data: any; timestamp: number }>();
@@ -18,155 +27,133 @@ function setCache<T>(key: string, data: T): void {
   cache.set(key, { data, timestamp: Date.now() });
 }
 
-// Convert local data to Product format
-function convertLocalDataToProduct(item: any): Product {
-  return {
-    id: item.handle,
-    name: item.name,
-    description: item.description,
-    price: item.price,
-    comparePrice: item.comparePrice,
-    images: item.images,
-    category: item.category as any,
-    subcategory: item.subcategory,
-    tags: item.tags,
-    stock: 10,
-    sku: item.handle,
-    featured: false,
-    status: 'active',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-}
-
-// Load all products from local data
+// Load all products from database
 export async function getAllProducts(): Promise<Product[]> {
-  const cacheKey = 'all_products_local';
+  const cacheKey = 'all_products_db';
   const cached = getCached<Product[]>(cacheKey);
   if (cached) return cached;
 
   try {
-    // Convert local data to Product format
-    const products = localData.map(convertLocalDataToProduct);
+    const products = await getAllProductsFromDb();
     setCache(cacheKey, products);
     return products;
   } catch (error) {
-    console.error("Error loading local products:", error);
+    console.error("Error loading products from database:", error);
     return [];
   }
 }
 
-// Load products by category from local data
+// Load products by category from database
 export async function getProductsByCategory(category: string): Promise<Product[]> {
-  const cacheKey = `products_category_${category}_local`;
+  const cacheKey = `products_category_${category}_db`;
   const cached = getCached<Product[]>(cacheKey);
   if (cached) return cached;
 
   try {
-    const filteredData = localData.filter(item => item.category === category);
-    const products = filteredData.map(convertLocalDataToProduct);
+    const products = await getProductsByCategoryFromDb(category);
     setCache(cacheKey, products);
     return products;
   } catch (error) {
-    console.error("Error loading products by category:", error);
+    console.error("Error loading products by category from database:", error);
     return [];
   }
 }
 
-// Load products by subcategory from local data
+// Load products by subcategory from database
 export async function getProductsBySubcategory(category: string, subcategory: string): Promise<Product[]> {
-  const cacheKey = `products_subcategory_${category}_${subcategory}_local`;
+  const cacheKey = `products_subcategory_${category}_${subcategory}_db`;
   const cached = getCached<Product[]>(cacheKey);
   if (cached) return cached;
 
   try {
-    const filteredData = localData.filter(item => 
-      item.category === category && item.subcategory === subcategory
-    );
-    const products = filteredData.map(convertLocalDataToProduct);
+    const products = await getProductsBySubcategoryFromDb(category, subcategory);
     setCache(cacheKey, products);
     return products;
   } catch (error) {
-    console.error("Error loading products by subcategory:", error);
+    console.error("Error loading products by subcategory from database:", error);
     return [];
   }
 }
 
-// Get categories from local data
+// Get categories from database
 export const getCategories = async (): Promise<Category[]> => {
-  const cacheKey = 'categories_local';
+  const cacheKey = 'categories_db';
   const cached = getCached<Category[]>(cacheKey);
   if (cached) return cached;
 
   try {
-    const categories: Category[] = [
-      {
-        id: 'sarees',
-        name: 'Sarees',
-        slug: 'sarees',
-        description: 'Traditional Indian sarees collection',
-        image: '/assets/sarees/saree1.jpeg',
-        featured: true,
-        order: 1,
-        subcategories: [
-          { id: 'cotton', name: 'Cotton Sarees', slug: 'cotton', categoryId: 'sarees', order: 1 },
-          { id: 'silk', name: 'Silk Sarees', slug: 'silk', categoryId: 'sarees', order: 2 },
-          { id: 'chiffon', name: 'Chiffon Sarees', slug: 'chiffon', categoryId: 'sarees', order: 3 }
-        ],
-      },
-      {
-        id: 'suit',
-        name: 'Suit Sets',
-        slug: 'suit',
-        description: 'Complete suit sets for every occasion',
-        image: '/assets/suit/suit2.webp',
-        featured: true,
-        order: 2,
-        subcategories: [
-          { id: 'cotton', name: 'Cotton Suits', slug: 'cotton', categoryId: 'suit', order: 1 },
-          { id: 'silk', name: 'Silk Suits', slug: 'silk', categoryId: 'suit', order: 2 },
-          { id: 'chiffon', name: 'Chiffon Suits', slug: 'chiffon', categoryId: 'suit', order: 3 }
-        ],
-      },
-      {
-        id: 'dupattas',
-        name: 'Dupattas',
-        slug: 'dupattas',
-        description: 'Beautiful dupattas and scarves',
-        image: '/assets/chiffon_dupatta/dupatta1.webp',
-        featured: false,
-        order: 3,
-        subcategories: [
-          { id: 'cotton', name: 'Cotton Dupattas', slug: 'cotton', categoryId: 'dupattas', order: 1 },
-          { id: 'silk', name: 'Silk Dupattas', slug: 'silk', categoryId: 'dupattas', order: 2 },
-          { id: 'chiffon', name: 'Chiffon Dupattas', slug: 'chiffon', categoryId: 'dupattas', order: 3 }
-        ],
-      }
-    ];
+    const categories = await getCategoriesFromDb();
     setCache(cacheKey, categories);
     return categories;
   } catch (error) {
-    console.error("Error loading categories:", error);
+    console.error("Error loading categories from database:", error);
     return [];
   }
 };
 
 export async function getProductById(id: string): Promise<Product | undefined> {
-  const cacheKey = `product_${id}_local`;
+  const cacheKey = `product_${id}_db`;
   const cached = getCached<Product>(cacheKey);
   if (cached) return cached;
 
   try {
-    const product = localData.find(item => item.handle === id);
+    const product = await getProductByIdFromDb(id);
     if (product) {
-      const convertedProduct = convertLocalDataToProduct(product);
-      setCache(cacheKey, convertedProduct);
-      return convertedProduct;
+      setCache(cacheKey, product);
+      return product;
     }
     return undefined;
   } catch (error) {
-    console.error("Error fetching product by ID:", error);
+    console.error("Error fetching product by ID from database:", error);
     return undefined;
+  }
+}
+
+// Search products from database
+export async function searchProducts(query: string): Promise<Product[]> {
+  const cacheKey = `search_${query}_db`;
+  const cached = getCached<Product[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const products = await searchProductsFromDb(query);
+    setCache(cacheKey, products);
+    return products;
+  } catch (error) {
+    console.error("Error searching products from database:", error);
+    return [];
+  }
+}
+
+// Get featured products from database
+export async function getFeaturedProducts(limit: number = 8): Promise<Product[]> {
+  const cacheKey = `featured_products_${limit}_db`;
+  const cached = getCached<Product[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const products = await getFeaturedProductsFromDb(limit);
+    setCache(cacheKey, products);
+    return products;
+  } catch (error) {
+    console.error("Error fetching featured products from database:", error);
+    return [];
+  }
+}
+
+// Get low stock products from database
+export async function getLowStockProducts(threshold: number = 10): Promise<Product[]> {
+  const cacheKey = `low_stock_products_${threshold}_db`;
+  const cached = getCached<Product[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const products = await getLowStockProductsFromDb(threshold);
+    setCache(cacheKey, products);
+    return products;
+  } catch (error) {
+    console.error("Error fetching low stock products from database:", error);
+    return [];
   }
 }
 

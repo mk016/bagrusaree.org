@@ -13,7 +13,7 @@ import { API_ENDPOINTS } from '@/lib/constants';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Product, Category, Subcategory } from '@/lib/types';
-import { getProductsBySubcategory, getCategories } from '@/lib/data';
+import { getProductsByCategory, getCategories } from '@/lib/product-data';
 import { FloatingWhatsApp } from '@/components/ui/floating-whatsapp';
 
 export default function SubcategoryPage() {
@@ -32,10 +32,14 @@ export default function SubcategoryPage() {
     const loadData = async () => {
       try {
         const [productsData, categoriesData] = await Promise.all([
-          getProductsBySubcategory(categorySlug, subcategorySlug),
+          getProductsByCategory(categorySlug),
           getCategories()
         ]);
-        setProducts(productsData);
+        // Filter products by subcategory on client-side
+        const filteredProducts = productsData.filter(product => 
+          product.subcategory === subcategorySlug
+        );
+        setProducts(filteredProducts);
         setCategories(categoriesData);
       } catch (error) {
         console.error('Error loading data:', error);

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
 // Mock trending products table since it doesn't exist in schema yet
@@ -7,17 +6,62 @@ const TRENDING_TABLE_NAME = "trending_products";
 
 export async function GET(req: NextRequest) {
   try {
-    // Since we don't have a trending_products table yet,
-    // we'll fetch products and mock the trending status
+    // Get trending product IDs from URL params (for server-side storage simulation)
+    const url = new URL(req.url);
+    const trendingIds = url.searchParams.get('ids')?.split(',') || [];
+    
+    // If no specific trending IDs provided, return default trending products
+    if (trendingIds.length === 0 || trendingIds[0] === '') {
+      const products = await prisma.products.findMany({
+        where: {
+          isAvailable: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 5
+      });
+      
+      const trendingProducts = products.map((product, index) => ({
+        id: `trending-${product.id}`,
+        productId: product.id,
+        product: {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          price: parseFloat(product.sellingPrice.toString()),
+          images: product.imagesUrl || [],
+          category: product.category,
+          subcategory: product.subcategory || undefined,
+          tags: product.tags || [],
+          stock: product.weight || 0,
+          sku: product.id.substring(0, 8).toUpperCase(),
+          featured: true,
+          status: product.isAvailable ? 'active' : 'draft',
+        },
+        trending: true,
+        order: index + 1,
+        createdAt: new Date().toISOString()
+      }));
+      
+      return NextResponse.json(trendingProducts);
+    }
+    
+    // Fetch specific products based on trending IDs
     const products = await prisma.products.findMany({
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 10 // Limit to 10 products
+      where: {
+        id: {
+          in: trendingIds
+        },
+        isAvailable: true
+      }
     });
     
-    // Map to trending products format
-    const trendingProducts = products.slice(0, 5).map((product, index) => {
+    // Map products to trending format in the order specified
+    const trendingProducts = trendingIds.map((id, index) => {
+      const product = products.find(p => p.id === id);
+      if (!product) return null;
+      
       return {
         id: `trending-${product.id}`,
         productId: product.id,
@@ -39,7 +83,7 @@ export async function GET(req: NextRequest) {
         order: index + 1,
         createdAt: new Date().toISOString()
       };
-    });
+    }).filter(Boolean);
     
     return NextResponse.json(trendingProducts);
   } catch (error) {

@@ -9,11 +9,19 @@ export const getProducts = async (): Promise<Product[]> => {
 // Get all products
 export const getAllProducts = async (): Promise<Product[]> => {
   try {
+    console.log("Fetching from:", API_ENDPOINTS.PRODUCTS);
     const response = await fetch(API_ENDPOINTS.PRODUCTS);
+    console.log("Response status:", response.status, response.statusText);
+    
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error("Response error:", errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
+    
     const products: Product[] = await response.json();
+    console.log("Products fetched successfully:", products.length, "products");
+    console.log("First product:", products[0]?.name);
     return products;
   } catch (e: any) {
     console.error("Error fetching products:", e);
@@ -54,11 +62,19 @@ export const getFeaturedProducts = async (): Promise<Product[]> => {
 // Get product by ID
 export const getProductById = async (id: string): Promise<Product | null> => {
   try {
-    const response = await fetch(`${API_ENDPOINTS.PRODUCTS}/${id}`);
+    console.log(`Fetching product with ID: ${id}`);
+    const url = `${API_ENDPOINTS.PRODUCTS}/${id}`;
+    console.log(`Fetching from URL: ${url}`);
+    
+    const response = await fetch(url);
+    console.log(`Response status: ${response.status}`);
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
     const product: Product = await response.json();
+    console.log(`Product fetched successfully:`, product.name);
     return product;
   } catch (e: any) {
     console.error(`Error fetching product with ID ${id}:`, e);
@@ -125,6 +141,22 @@ export const deleteProduct = async (id: string): Promise<void> => {
     console.log('Product deleted successfully');
   } catch (e: any) {
     console.error('Error deleting product:', e);
+    throw e;
+  }
+};
+
+// Categories functions
+export const getCategories = async () => {
+  try {
+    const response = await fetch('/api/categories');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const categories = await response.json();
+    console.log('Categories fetched successfully:', categories);
+    return categories;
+  } catch (e: any) {
+    console.error('Error fetching categories:', e);
     throw e;
   }
 }; 

@@ -13,7 +13,7 @@ export function FloatingWhatsApp() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] pointer-events-auto">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] pointer-events-auto" data-whatsapp-button>
       {/* WhatsApp Button */}
       <Button
         onClick={openWhatsApp}

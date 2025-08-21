@@ -15,8 +15,9 @@ import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
 import { useCartStore, useWishlistStore } from '@/lib/store';
 import { Product } from '@/lib/types';
-import { getAllProducts } from '@/lib/data';
+import { getAllProducts } from '@/lib/product-data';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 const mockReviews = [
   {
@@ -65,7 +66,7 @@ export default function ProductDetailPageClient({ product }: ProductDetailPageCl
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   
-  const { addItem: addToCart } = useCartStore();
+  const { addItem: addToCart, items: cartItems } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
 
   const isWishlisted = isInWishlist(product.id);
@@ -94,10 +95,19 @@ export default function ProductDetailPageClient({ product }: ProductDetailPageCl
   const handleAddToCart = () => {
     addToCart({
       productId: product.id,
-      product,
+      name: product.name,
+      price: product.price,
+      image: product.images[0],
       quantity,
       size: selectedSize,
       color: selectedColor,
+      sku: product.sku,
+    });
+    
+    toast({
+      title: "Added to Cart!",
+      description: `${product.name} has been added to your cart.`,
+      variant: "default",
     });
   };
 
@@ -105,11 +115,15 @@ export default function ProductDetailPageClient({ product }: ProductDetailPageCl
     // Add to cart first
     addToCart({
       productId: product.id,
-      product,
+      name: product.name,
+      price: product.price,
+      image: product.images[0],
       quantity,
       size: selectedSize,
       color: selectedColor,
+      sku: product.sku,
     });
+    
     // Then redirect to checkout
     router.push('/checkout');
   };
@@ -119,9 +133,11 @@ export default function ProductDetailPageClient({ product }: ProductDetailPageCl
       removeFromWishlist(product.id);
     } else {
       addToWishlist({
-        userId: '1',
         productId: product.id,
-        product,
+        name: product.name,
+        price: product.price,
+        image: product.images[0],
+        sku: product.sku,
       });
     }
   };

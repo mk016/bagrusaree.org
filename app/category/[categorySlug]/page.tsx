@@ -16,7 +16,7 @@ import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
 import { API_ENDPOINTS } from '@/lib/constants';
-import { getAllProducts, getCategories, getProductsByCategory } from '@/lib/data';
+import { getAllProducts, getProductsByCategory, getCategories } from '@/lib/product-data';
 import { Product } from '@/lib/types';
 import { FloatingWhatsApp } from '@/components/ui/floating-whatsapp';
 import { cn } from '@/lib/utils';

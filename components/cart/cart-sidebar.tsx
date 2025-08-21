@@ -51,14 +51,14 @@ export function CartSidebar() {
                   <div key={item.id} className="flex space-x-4">
                     <div className="relative h-16 w-16 rounded-md overflow-hidden bg-gray-100">
                       <img
-                        src={item.product.images[0]}
-                        alt={item.product.name}
+                        src={item.image}
+                        alt={item.name}
                         className="h-full w-full object-cover"
                       />
                     </div>
                     <div className="flex-1 space-y-1">
                       <h3 className="text-sm font-medium leading-tight">
-                        {item.product.name}
+                        {item.name}
                       </h3>
                       <div className="flex items-center space-x-2 text-xs text-gray-500">
                         {item.size && <span>Size: {item.size}</span>}
@@ -86,7 +86,7 @@ export function CartSidebar() {
                         </div>
                         <div className="text-right">
                           <div className="text-sm font-medium">
-                            ₹{(item.product.price * item.quantity).toLocaleString()}
+                            ₹{(item.price * item.quantity).toLocaleString()}
                           </div>
                           <Button
                             variant="ghost"

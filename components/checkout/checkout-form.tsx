@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreditCard, Truck, Shield, ArrowLeft, Check, Lock, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,9 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCartStore } from '@/lib/store';
+import { RazorpayPayment } from '@/components/payment/razorpay-payment';
+import { PaymentFormData } from '@/lib/types';
+import { toast } from '@/hooks/use-toast';
 
 const indianStates = [
   'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar',
@@ -29,7 +32,7 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
   const router = useRouter();
   const { items, getTotalPrice, clearCart } = useCartStore();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PaymentFormData>({
     firstName: '',
     lastName: '',
     email: '',
@@ -39,12 +42,12 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
     city: '',
     state: '',
     zipCode: '',
-    paymentMethod: 'upi',
-    upiId: '',
+    paymentMethod: 'razorpay',
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isFormValid, setIsFormValid] = useState(false);
 
   const subtotal = getTotalPrice();
   const shipping = subtotal > 999 ? 0 : 99;
@@ -71,13 +74,27 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
     if (!formData.state) newErrors.state = 'State is required';
     if (!formData.zipCode) newErrors.zipCode = 'ZIP code is required';
 
-    if (formData.paymentMethod === 'upi' && !formData.upiId) {
-      newErrors.upiId = 'UPI ID is required';
-    }
+    // No additional validation needed for Razorpay
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  // Update form validation status whenever form data changes
+  useEffect(() => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.firstName) newErrors.firstName = 'First name is required';
+    if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    if (!formData.email) newErrors.email = 'Email is required';
+    if (!formData.phone) newErrors.phone = 'Phone number is required';
+    if (!formData.address1) newErrors.address1 = 'Address is required';
+    if (!formData.city) newErrors.city = 'City is required';
+    if (!formData.state) newErrors.state = 'State is required';
+    if (!formData.zipCode) newErrors.zipCode = 'ZIP code is required';
+
+    setIsFormValid(Object.keys(newErrors).length === 0);
+  }, [formData]);
 
   const generateOrderSummary = () => {
     const orderDetails = {
@@ -89,10 +106,10 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
       },
       items: items.map(item => ({
         productId: item.productId,
-        name: item.product.name,
+        name: item.name,
         quantity: item.quantity,
-        price: item.product.price,
-        total: item.product.price * item.quantity,
+        price: item.price,
+        total: item.price * item.quantity,
         size: item.size,
         color: item.color
       })),
@@ -102,8 +119,7 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
         tax,
         total
       },
-      paymentMethod: formData.paymentMethod,
-      upiId: formData.paymentMethod === 'upi' ? formData.upiId : null
+      paymentMethod: formData.paymentMethod
     };
 
     return orderDetails;
@@ -136,9 +152,6 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
     message += `*Total: ₹${orderDetails.pricing.total.toLocaleString()}*\n\n`;
     
     message += `💳 *Payment Method:* ${orderDetails.paymentMethod.toUpperCase()}\n`;
-    if (orderDetails.upiId) {
-      message += `UPI ID: ${orderDetails.upiId}\n`;
-    }
     
     message += `\nPlease confirm this order and provide payment instructions.`;
 
@@ -148,7 +161,27 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
     window.open(whatsappUrl, '_blank');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePaymentSuccess = (paymentId: string, orderId: string) => {
+    // Send WhatsApp notification for successful orders
+    const orderDetails = generateOrderSummary();
+    sendToWhatsApp(orderDetails);
+    
+    // Clear cart after successful payment
+    clearCart();
+    
+    // Redirect to success page
+    router.push(`/checkout/success?paymentId=${paymentId}&orderId=${orderId}`);
+  };
+
+  const handlePaymentError = (error: string) => {
+    toast({
+      title: "Payment Failed",
+      description: error,
+      variant: "destructive",
+    });
+  };
+
+  const handleCODSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -161,7 +194,7 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
       // Generate order summary
       const orderDetails = generateOrderSummary();
       
-      // Send order to backend API
+      // Send order to backend API for COD
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -176,7 +209,7 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
       }
 
       const result = await response.json();
-      console.log('Order successfully placed in database:', result);
+      console.log('COD Order successfully placed in database:', result);
 
       // Send to WhatsApp
       sendToWhatsApp(orderDetails);
@@ -187,9 +220,12 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
       // Redirect to success page
       router.push('/checkout/success');
     } catch (error) {
-      console.error('Error processing order:', error);
-      // Optionally display an error message to the user
-      alert(`Order placement failed: ${(error as Error).message}`);
+      console.error('Error processing COD order:', error);
+      toast({
+        title: "Order Failed",
+        description: error instanceof Error ? error.message : 'Failed to place order',
+        variant: "destructive",
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -205,7 +241,7 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
         <h1 className="text-2xl font-bold text-gray-900">Checkout</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleCODSubmit} className="space-y-6">
         {/* Contact Information */}
         <Card className="bg-white">
           <CardHeader>
@@ -347,13 +383,13 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
           <CardContent className="space-y-4">
             <RadioGroup 
               value={formData.paymentMethod} 
-              onValueChange={(value) => handleInputChange('paymentMethod', value)}
+              onValueChange={(value) => handleInputChange('paymentMethod', value as 'razorpay' | 'cod')}
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="upi" id="upi" />
-                <Label htmlFor="upi" className="flex items-center">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  UPI Payment
+                <RadioGroupItem value="razorpay" id="razorpay" />
+                <Label htmlFor="razorpay" className="flex items-center">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Online Payment (Cards, UPI, Net Banking)
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
@@ -362,22 +398,14 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
               </div>
             </RadioGroup>
 
-            {formData.paymentMethod === 'upi' && (
-              <div className="space-y-4 pt-4 border-t">
-                <div>
-                  <Label htmlFor="upiId">UPI ID *</Label>
-                  <Input
-                    id="upiId"
-                    placeholder="yourname@paytm"
-                    required
-                    value={formData.upiId}
-                    onChange={(e) => handleInputChange('upiId', e.target.value)}
-                    className={`bg-white ${errors.upiId ? 'border-red-500' : ''}`}
-                  />
-                  {errors.upiId && <p className="text-red-500 text-sm mt-1">{errors.upiId}</p>}
-                  <p className="text-sm text-gray-600 mt-1">
-                    Enter your UPI ID for payment processing
-                  </p>
+            {formData.paymentMethod === 'razorpay' && (
+              <div className="pt-4 border-t">
+                <p className="text-sm text-gray-600 mb-2">
+                  Pay securely with Credit/Debit Cards, UPI, Net Banking, or Digital Wallets.
+                </p>
+                <div className="text-xs text-green-600 flex items-center">
+                  <Shield className="h-3 w-3 mr-1" />
+                  Secure payment powered by Razorpay
                 </div>
               </div>
             )}
@@ -392,25 +420,65 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
           </CardContent>
         </Card>
 
-        <Button 
-          type="submit" 
-          className="w-full" 
-          size="lg"
-          disabled={isProcessing}
-        >
-          {isProcessing ? (
-            <div className="flex items-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Processing Order...
-            </div>
-          ) : (
-            <>
-              <MessageCircle className="h-5 w-5 mr-2" />
-              Complete Order via WhatsApp - ₹{total.toLocaleString()}
-            </>
-          )}
-        </Button>
+        {/* Submit Button for COD */}
+        {formData.paymentMethod === 'cod' && (
+          <Button 
+            type="submit" 
+            className="w-full" 
+            size="lg"
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Processing Order...
+              </div>
+            ) : (
+              <>
+                <MessageCircle className="h-5 w-5 mr-2" />
+                Complete Order (COD) - ₹{total.toLocaleString()}
+              </>
+            )}
+          </Button>
+        )}
       </form>
+
+      {/* Razorpay Payment Component */}
+      {formData.paymentMethod === 'razorpay' && isFormValid && (
+        <RazorpayPayment
+          orderData={{
+            customer: formData,
+            items: items.map(item => ({
+              productId: item.productId,
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              total: item.price * item.quantity,
+              size: item.size,
+              color: item.color
+            })),
+            pricing: {
+              subtotal,
+              shipping,
+              tax,
+              total
+            }
+          }}
+          onSuccess={handlePaymentSuccess}
+          onError={handlePaymentError}
+          isProcessing={isProcessing}
+          onProcessingChange={setIsProcessing}
+        />
+      )}
+
+      {/* Form validation message for Razorpay */}
+      {formData.paymentMethod === 'razorpay' && !isFormValid && (
+        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+          <p className="text-yellow-800 text-sm">
+            Please fill in all required fields above to continue with payment.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

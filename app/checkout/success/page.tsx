@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Check, MessageCircle, Home, ShoppingBag } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Check, MessageCircle, Home, ShoppingBag, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/layout/header';
@@ -10,15 +10,35 @@ import { Footer } from '@/components/layout/footer';
 
 export default function CheckoutSuccessPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [paymentInfo, setPaymentInfo] = useState<{
+    paymentId: string | null;
+    orderId: string | null;
+    isPaid: boolean;
+  }>({
+    paymentId: null,
+    orderId: null,
+    isPaid: false,
+  });
 
   useEffect(() => {
-    // Auto redirect after 10 seconds
+    // Get payment info from URL params
+    const paymentId = searchParams.get('paymentId');
+    const orderId = searchParams.get('orderId');
+    
+    setPaymentInfo({
+      paymentId,
+      orderId,
+      isPaid: !!paymentId && !!orderId,
+    });
+
+    // Auto redirect after 15 seconds
     const timer = setTimeout(() => {
       router.push('/');
-    }, 10000);
+    }, 15000);
 
     return () => clearTimeout(timer);
-  }, [router]);
+  }, [router, searchParams]);
 
   const openWhatsApp = () => {
     const whatsappNumber = '919024306866';
@@ -40,20 +60,45 @@ export default function CheckoutSuccessPage() {
                 <Check className="h-12 w-12 text-green-600" />
               </div>
               <CardTitle className="text-3xl font-bold text-gray-900 mb-4">
-                Order Submitted Successfully!
+                {paymentInfo.isPaid ? 'Payment Successful!' : 'Order Submitted Successfully!'}
               </CardTitle>
             </CardHeader>
             
             <CardContent className="space-y-6">
+              {/* Payment Success Info */}
+              {paymentInfo.isPaid && (
+                <div className="bg-green-50 p-6 rounded-lg">
+                  <div className="flex items-center justify-center mb-4">
+                    <CreditCard className="h-8 w-8 text-green-600 mr-3" />
+                    <h3 className="text-lg font-semibold text-green-900">
+                      Payment Confirmed
+                    </h3>
+                  </div>
+                  <div className="space-y-2 text-sm text-green-700">
+                    {paymentInfo.paymentId && (
+                      <p><strong>Payment ID:</strong> {paymentInfo.paymentId}</p>
+                    )}
+                    {paymentInfo.orderId && (
+                      <p><strong>Order ID:</strong> {paymentInfo.orderId}</p>
+                    )}
+                    <p>Your payment has been processed successfully. Your order is now being prepared for shipment.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* WhatsApp Info */}
               <div className="bg-blue-50 p-6 rounded-lg">
                 <div className="flex items-center justify-center mb-4">
                   <MessageCircle className="h-8 w-8 text-blue-600 mr-3" />
                   <h3 className="text-lg font-semibold text-blue-900">
-                    Your order has been sent via WhatsApp
+                    {paymentInfo.isPaid ? 'Order confirmation sent via WhatsApp' : 'Your order has been sent via WhatsApp'}
                   </h3>
                 </div>
                 <p className="text-blue-700 text-sm">
-                  We've sent your order details to our WhatsApp number. Our team will contact you shortly to confirm your order and provide payment instructions.
+                  {paymentInfo.isPaid 
+                    ? "We've sent your paid order details to our WhatsApp number. Our team will process your order and provide shipping updates."
+                    : "We've sent your order details to our WhatsApp number. Our team will contact you shortly to confirm your order and provide payment instructions."
+                  }
                 </p>
               </div>
 
@@ -106,7 +151,7 @@ export default function CheckoutSuccessPage() {
               </div>
 
               <p className="text-sm text-gray-500">
-                You will be redirected to the homepage in 10 seconds...
+                You will be redirected to the homepage in 15 seconds...
               </p>
             </CardContent>
           </Card>
