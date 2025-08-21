@@ -77,10 +77,23 @@ export interface Subcategory {
 export interface CartItem {
   id: string;
   productId: string;
-  product: Product;
+  name: string;
+  price: number;
+  image: string;
   quantity: number;
   size?: string;
   color?: string;
+  sku?: string;
+}
+
+export interface WishlistItem {
+  id: string;
+  productId: string;
+  name: string;
+  price: number;
+  image: string;
+  sku?: string;
+  createdAt: string;
 }
 
 export interface Order {
@@ -222,4 +235,56 @@ export interface PaymentTransaction {
   amount: number;
   status: string;
   createdAt: string;
+}
+
+// Razorpay Payment Interfaces
+export interface RazorpayOrderData {
+  id: string;
+  amount: number;
+  currency: string;
+  receipt: string;
+  status: string;
+  created_at: number;
+  notes?: Record<string, string>;
+}
+
+export interface RazorpayPaymentVerification {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+export interface PaymentFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  paymentMethod: 'razorpay' | 'cod';
+}
+
+export interface RazorpayCheckoutOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  handler: (response: RazorpayPaymentVerification) => void;
+  prefill: {
+    name: string;
+    email: string;
+    contact: string;
+  };
+  notes: Record<string, string>;
+  theme: {
+    color: string;
+  };
+  modal: {
+    ondismiss: () => void;
+  };
 }

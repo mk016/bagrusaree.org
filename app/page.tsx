@@ -9,7 +9,8 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
-import { getAllProducts, getCategories, getBanners, getProductsByCategory } from '@/lib/data';
+import { getAllProducts, getProductsByCategory } from '@/lib/product-data';
+import { getCategories, getBanners } from '@/lib/data';
 import { Product, Category, CategoryProductGroup } from '@/lib/types';
 import { Banner } from '@prisma/client';
 import { IMAGE_PLACEHOLDER } from '@/lib/constants';
@@ -86,8 +87,12 @@ export default function Home() {
 
     // Load products last (heavier) - don't block UI
     getAllProducts()
-      .then(setProducts)
-      .catch(console.error);
+      .then(data => {
+        setProducts(data);
+      })
+      .catch(error => {
+        console.error('Error loading products:', error);
+      });
   }, []);
 
   // Load products by category for alternating sections
@@ -124,8 +129,47 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [banners.length]);
 
-  // Get trending products (featured products)
-  const trendingProducts = products.filter(product => product.featured).slice(0, 4);
+  // State for trending products from admin panel
+  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
+  
+  // Fetch trending products from admin panel (localStorage)
+  useEffect(() => {
+    const fetchTrendingProducts = () => {
+      try {
+        // Get trending products from localStorage (set by admin panel)
+        const savedTrending = localStorage.getItem('admin-trending-products');
+        if (savedTrending && products.length > 0) {
+          const trendingIds = JSON.parse(savedTrending);
+          const trendingProducts = trendingIds.map((item: any) => {
+            return products.find(p => p.id === item.productId);
+          }).filter(Boolean).slice(0, 4); // Show only 4 on home page
+          
+          if (trendingProducts.length > 0) {
+            setTrendingProducts(trendingProducts);
+          } else {
+            // Fallback to featured products
+            const featuredProducts = products.filter(product => product.featured).slice(0, 4);
+            setTrendingProducts(featuredProducts.length > 0 ? featuredProducts : products.slice(0, 4));
+          }
+        } else {
+          // Fallback to featured products if no trending data
+          const featuredProducts = products.filter(product => product.featured).slice(0, 4);
+          setTrendingProducts(featuredProducts.length > 0 ? featuredProducts : products.slice(0, 4));
+        }
+      } catch (error) {
+        console.error('Error fetching trending products:', error);
+        // Fallback to featured products
+        const featuredProducts = products.filter(product => product.featured).slice(0, 4);
+        setTrendingProducts(featuredProducts.length > 0 ? featuredProducts : products.slice(0, 4));
+      }
+    };
+
+    if (products.length > 0) {
+      fetchTrendingProducts();
+    }
+  }, [products]);
+
+  const fallbackTrendingProducts = trendingProducts;
   const featuredCategories = categories.filter(cat => cat.featured);
 
   return (
@@ -152,27 +196,7 @@ export default function Home() {
                 loading="eager"
               />
               
-              {/* Banner Content Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-black/20 to-transparent">
-                <div className="absolute bottom-0 left-0 right-0 p-4 xs:p-6 sm:p-8 md:p-12 text-white">
-                  <div className="max-w-2xl">
-                    <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3">
-                      {banner.title || 'Discover Amazing Products'}
-                    </h2>
-                    {banner.description && (
-                      <p className="text-sm xs:text-base sm:text-lg md:text-xl text-white/90 mb-3 sm:mb-4 hidden xs:block">
-                        {banner.description}
-                      </p>
-                    )}
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs xs:text-sm sm:text-base font-medium bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
-                        Shop Now
-                      </span>
-                      <ArrowRight className="h-4 w-4 xs:h-5 xs:w-5 text-white" />
-                    </div>
-                  </div>
-                </div>
-              </div>
+
             </Link>
           ))
         ) : (
@@ -399,8 +423,10 @@ export default function Home() {
 
 
 
+
+
       {/* Trending Products - Shows when available */}
-      {trendingProducts.length > 0 && (
+      {fallbackTrendingProducts.length > 0 && (
         <section className="py-10 sm:py-14 md:py-16 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-0">
@@ -421,7 +447,7 @@ export default function Home() {
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-              {trendingProducts.map((product) => (
+              {fallbackTrendingProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
@@ -450,7 +476,10 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {products.filter(p => p.category === 'suit' && p.subcategory === 'cotton').slice(0, 4).map((product) => (
+            {(products.filter(p => p.category === 'suit' && p.subcategory === 'cotton').slice(0, 4).length > 0
+              ? products.filter(p => p.category === 'suit' && p.subcategory === 'cotton').slice(0, 4)
+              : products.filter(p => p.category === 'suit').slice(0, 4)
+            ).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
@@ -478,7 +507,10 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {products.filter(p => p.category === 'suit' && p.subcategory === 'silk').slice(0, 4).map((product) => (
+            {(products.filter(p => p.category === 'suit' && p.subcategory === 'cotton').slice(4, 8).length > 0
+              ? products.filter(p => p.category === 'suit' && p.subcategory === 'cotton').slice(4, 8)
+              : products.filter(p => p.category === 'suit').slice(4, 8)
+            ).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
@@ -506,7 +538,10 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(0, 4).map((product) => (
+            {(products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(0, 4).length > 0
+              ? products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(0, 4)
+              : products.filter(p => p.category === 'sarees').slice(0, 4)
+            ).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
@@ -534,7 +569,10 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {products.filter(p => p.category === 'sarees' && p.subcategory === 'silk').slice(0, 4).map((product) => (
+            {(products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(4, 8).length > 0
+              ? products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(4, 8)
+              : products.filter(p => p.category === 'sarees').slice(4, 8)
+            ).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
@@ -590,7 +628,10 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {products.filter(p => p.category === 'suit' && p.subcategory === 'chiffon').slice(0, 4).map((product) => (
+            {(products.filter(p => p.category === 'suit' && p.subcategory === 'cotton').slice(8, 12).length > 0
+              ? products.filter(p => p.category === 'suit' && p.subcategory === 'cotton').slice(8, 12)
+              : products.filter(p => p.category === 'suit').slice(8, 12)
+            ).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
@@ -618,7 +659,10 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {products.filter(p => p.category === 'sarees' && p.subcategory === 'silk').slice(0, 4).map((product) => (
+            {(products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(8, 12).length > 0
+              ? products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(8, 12)
+              : products.filter(p => p.category === 'sarees').slice(8, 12)
+            ).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
@@ -646,7 +690,10 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {products.filter(p => p.category === 'sarees' && p.subcategory === 'silk').slice(4, 8).map((product) => (
+            {(products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(12, 16).length > 0
+              ? products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(12, 16)
+              : products.filter(p => p.category === 'sarees').slice(12, 16)
+            ).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
@@ -674,14 +721,47 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(8, 12).map((product) => (
+            {(products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(16, 20).length > 0
+              ? products.filter(p => p.category === 'sarees' && p.subcategory === 'cotton').slice(16, 20)
+              : products.filter(p => p.category === 'sarees').slice(16, 20)
+            ).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </div>
       </section>
 
-      
+
+
+      {/* All Products Section - Fallback if specific categories are empty */}
+      {products.length > 0 && (
+        <section className="py-10 sm:py-14 md:py-16 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-0">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
+                  Our Latest Collection
+                </h2>
+                <p className="text-gray-600 text-sm sm:text-base">
+                  Discover our complete range of premium products
+                </p>
+              </div>
+              <Button variant="outline" asChild className="bg-white w-full sm:w-auto">
+                <Link href="/products">
+                  View All Products
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+              {products.slice(0, 8).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <Footer />
     </div>

@@ -1,38 +1,29 @@
 'use client';
 
-import { UserButton, SignInButton, SignUpButton, useUser } from '@clerk/nextjs';
+import { UserMenu } from './user-menu';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/lib/store';
+import Link from 'next/link';
 
 export function UserAuthButton() {
-  const { isSignedIn } = useUser();
+  const { isAuthenticated } = useAuthStore();
 
-  if (isSignedIn) {
-    return (
-      <UserButton 
-        afterSignOutUrl="/"
-        appearance={{
-          elements: {
-            userButtonBox: 'h-8 w-8',
-            userButtonTrigger: 'h-8 w-8',
-            userButtonAvatarBox: 'h-8 w-8'
-          }
-        }}
-      />
-    );
+  if (isAuthenticated) {
+    return <UserMenu />;
   }
 
   return (
     <div className="flex gap-2">
-      <SignInButton mode="modal">
+      <Link href="/auth/login">
         <Button variant="ghost" size="sm">
           Sign In
         </Button>
-      </SignInButton>
-      <SignUpButton mode="modal">
+      </Link>
+      <Link href="/auth/signup">
         <Button variant="default" size="sm">
           Sign Up
         </Button>
-      </SignUpButton>
+      </Link>
     </div>
   );
 }

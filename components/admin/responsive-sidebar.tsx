@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAdminAuth } from '@/contexts/admin-auth-context';
 import { 
   LayoutDashboard, 
   Package, 
@@ -30,7 +31,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
-const navigation = [
+const getNavigation = (productCount: number, orderCount: number) => [
   { 
     name: 'Dashboard', 
     href: '/admin', 
@@ -42,7 +43,7 @@ const navigation = [
     name: 'Products', 
     href: '/admin/products', 
     icon: Package,
-    badge: '1.2k',
+    badge: productCount > 0 ? productCount.toString() : null,
     children: [
       { name: 'All Products', href: '/admin/products' },
       { name: 'Add Product', href: '/admin/products/add' },
@@ -54,7 +55,7 @@ const navigation = [
     name: 'Orders', 
     href: '/admin/orders', 
     icon: ShoppingCart,
-    badge: '23',
+    badge: orderCount > 0 ? orderCount.toString() : null,
     children: [
       { name: 'All Orders', href: '/admin/orders' },
       { name: 'Pending', href: '/admin/orders/pending' },
@@ -84,7 +85,7 @@ const navigation = [
     children: []
   },
   { 
-    name: 'Trading Products', 
+    name: 'Trending Products', 
     href: '/admin/trending', 
     icon: TrendingUp,
     badge: null,
@@ -141,6 +142,37 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const { admin, logout } = useAdminAuth();
+  
+  // State for real counts
+  const [productCount, setProductCount] = useState(0);
+  const [orderCount, setOrderCount] = useState(0);
+
+  // Fetch real counts
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const [productsResponse, ordersResponse] = await Promise.all([
+          fetch('/api/products'),
+          fetch('/api/orders')
+        ]);
+        
+        if (productsResponse.ok) {
+          const products = await productsResponse.json();
+          setProductCount(products.length);
+        }
+        
+        if (ordersResponse.ok) {
+          const orders = await ordersResponse.json();
+          setOrderCount(orders.length);
+        }
+      } catch (error) {
+        console.error('Error fetching counts:', error);
+      }
+    };
+
+    fetchCounts();
+  }, []);
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev => 
@@ -150,6 +182,8 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
     );
   };
 
+  const navigation = getNavigation(productCount, orderCount);
+  
   const filteredNavigation = navigation.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.children.some(child => 
@@ -169,10 +203,10 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+        "fixed top-0 left-0 z-50 w-64 h-screen max-h-screen bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out lg:translate-x-0 admin-sidebar",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full max-h-screen overflow-hidden admin-sidebar-content">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
             <Link href="/admin" className="flex items-center space-x-2">
@@ -205,7 +239,7 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto admin-sidebar-nav">
             {filteredNavigation.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
               const isExpanded = expandedItems.includes(item.name);
@@ -213,11 +247,51 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
 
               return (
                 <div key={item.name}>
-                  <div className="flex items-center">
+                  {hasChildren ? (
+                    // Items with children - make the whole area clickable for expansion
+                    <div 
+                      className={cn(
+                        "flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer",
+                        isActive
+                          ? "bg-indigo-100 text-indigo-700"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      )}
+                      onClick={() => {
+                        toggleExpanded(item.name);
+                        // Also navigate to the main href on first click
+                        if (!isExpanded) {
+                          window.location.href = item.href;
+                        }
+                      }}
+                    >
+                      <item.icon
+                        className={cn(
+                          "mr-3 h-4 w-4 flex-shrink-0",
+                          isActive ? "text-indigo-500" : "text-gray-400"
+                        )}
+                      />
+                      <span className="flex-1">{item.name}</span>
+                      {item.badge && (
+                        <Badge 
+                          variant={isActive ? "default" : "secondary"} 
+                          className="ml-2 text-xs h-5 px-1.5"
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 transition-transform ml-2",
+                          isExpanded && "transform rotate-180"
+                        )}
+                      />
+                    </div>
+                  ) : (
+                    // Items without children - regular link
                     <Link
                       href={item.href}
                       className={cn(
-                        "flex items-center flex-1 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
+                        "flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
                         isActive
                           ? "bg-indigo-100 text-indigo-700"
                           : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -244,22 +318,7 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
                         </Badge>
                       )}
                     </Link>
-                    {hasChildren && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-1 ml-1"
-                        onClick={() => toggleExpanded(item.name)}
-                      >
-                        <ChevronDown
-                          className={cn(
-                            "h-4 w-4 transition-transform",
-                            isExpanded && "transform rotate-180"
-                          )}
-                        />
-                      </Button>
-                    )}
-                  </div>
+                  )}
 
                   {/* Submenu */}
                   {hasChildren && isExpanded && (
@@ -302,19 +361,26 @@ export function ResponsiveSidebar({ isOpen, onToggle }: ResponsiveSidebarProps) 
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  Admin User
+                  {admin?.name || 'Admin User'}
                 </p>
                 <p className="text-xs text-gray-500 truncate">
-                  admin@bagrusarees.com
+                  {admin?.email || 'admin@bagrusarees.com'}
                 </p>
               </div>
             </div>
             <div className="flex space-x-2">
-              <Button variant="outline" size="sm" className="flex-1 text-xs">
-                <Shield className="h-3 w-3 mr-1" />
-                Profile
-              </Button>
-              <Button variant="outline" size="sm" className="flex-1 text-xs">
+              <Link href="/admin/profile" className="flex-1">
+                <Button variant="outline" size="sm" className="w-full text-xs">
+                  <Shield className="h-3 w-3 mr-1" />
+                  Profile
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 text-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                onClick={logout}
+              >
                 <LogOut className="h-3 w-3 mr-1" />
                 Logout
               </Button>

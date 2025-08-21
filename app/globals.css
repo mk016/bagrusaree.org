@@ -57,4 +57,38 @@
     @apply bg-background text-foreground;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   }
+
+  /* Admin panel specific styles */
+  body.admin-panel {
+    overflow: hidden;
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  /* Admin sidebar specific styles */
+  .admin-sidebar {
+    max-height: 100vh;
+    overflow: hidden;
+  }
+
+  .admin-sidebar-content {
+    height: 100%;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .admin-sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+  }
+
+  /* Ensure admin layout is contained */
+  .admin-layout {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
 }

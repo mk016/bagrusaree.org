@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import ImageKit from "imagekit";
 
 // Ensure this route is not statically analyzed

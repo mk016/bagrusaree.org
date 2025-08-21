@@ -5,7 +5,7 @@ import { CartItem, User, WishlistItem } from './types';
 interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
-  login: (user: User) => void;
+  login: (email: string, password: string, name?: string) => boolean;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
 }
@@ -13,7 +13,7 @@ interface AuthStore {
 interface CartStore {
   items: CartItem[];
   isOpen: boolean;
-  addItem: (item: Omit<CartItem, 'id'>) => void;
+  addItem: (item: { productId: string; name: string; price: number; image: string; quantity: number; sku?: string; size?: string; color?: string; }) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -24,7 +24,7 @@ interface CartStore {
 
 interface WishlistStore {
   items: WishlistItem[];
-  addItem: (item: Omit<WishlistItem, 'id' | 'createdAt'>) => void;
+  addItem: (item: { productId: string; name: string; price: number; image: string; sku?: string; }) => void;
   removeItem: (productId: string) => void;
   isInWishlist: (productId: string) => boolean;
   clearWishlist: () => void;
@@ -73,7 +73,35 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       user: null,
       isAuthenticated: false,
-      login: (user) => set({ user, isAuthenticated: true }),
+      login: (email, password, name) => {
+        // Demo credentials
+        if (email === 'demo@example.com' && password === 'demo123') {
+          const user: User = {
+            id: 'demo-user-1',
+            email: email,
+            name: name || 'Demo User',
+            role: 'user',
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+          };
+          set({ user, isAuthenticated: true });
+          return true;
+        }
+        
+        // Allow any email/password for demo purposes
+        if (email && password && password.length >= 6) {
+          const user: User = {
+            id: `user-${Date.now()}`,
+            email: email,
+            name: name || email.split('@')[0],
+            role: 'user',
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+          };
+          set({ user, isAuthenticated: true });
+          return true;
+        }
+        
+        return false;
+      },
       logout: () => set({ user: null, isAuthenticated: false }),
       updateUser: (userData) => {
         const currentUser = get().user;
@@ -134,7 +162,7 @@ export const useCartStore = create<CartStore>()(
       clearCart: () => set({ items: [] }),
       toggleCart: () => set({ isOpen: !get().isOpen }),
       getTotalItems: () => get().items.reduce((total, item) => total + item.quantity, 0),
-      getTotalPrice: () => get().items.reduce((total, item) => total + (item.product.price * item.quantity), 0),
+      getTotalPrice: () => get().items.reduce((total, item) => total + (item.price * item.quantity), 0),
     }),
     {
       name: 'cart-storage',

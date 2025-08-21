@@ -3,6 +3,18 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
+  getDashboardStats, 
+  getSalesData, 
+  getCategoryData, 
+  getRecentOrders, 
+  getTopProducts,
+  DashboardStats,
+  SalesData,
+  CategoryData,
+  RecentOrder,
+  TopProduct
+} from '@/lib/dashboard-stats';
+import { 
   BarChart, 
   Bar, 
   XAxis, 
@@ -36,42 +48,47 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const salesData = [
-  { month: 'Jan', sales: 65000, orders: 120 },
-  { month: 'Feb', sales: 78000, orders: 145 },
-  { month: 'Mar', sales: 92000, orders: 180 },
-  { month: 'Apr', sales: 87000, orders: 165 },
-  { month: 'May', sales: 105000, orders: 210 },
-  { month: 'Jun', sales: 118000, orders: 235 },
-];
 
-const categoryData = [
-  { name: 'Sarees', value: 35, color: '#3B82F6' },
-  { name: 'Suit Sets', value: 28, color: '#10B981' },
-  { name: 'Dress Material', value: 20, color: '#F59E0B' },
-  { name: 'Fabrics', value: 12, color: '#EF4444' },
-  { name: 'Others', value: 5, color: '#8B5CF6' },
-];
-
-const recentOrders = [
-  { id: 'ORD-001', customer: 'Priya Sharma', amount: 2499, status: 'Delivered', date: '2024-01-15' },
-  { id: 'ORD-002', customer: 'Anjali Patel', amount: 3299, status: 'Shipped', date: '2024-01-14' },
-  { id: 'ORD-003', customer: 'Kavita Singh', amount: 899, status: 'Processing', date: '2024-01-14' },
-  { id: 'ORD-004', customer: 'Meera Gupta', amount: 1599, status: 'Pending', date: '2024-01-13' },
-  { id: 'ORD-005', customer: 'Sunita Rao', amount: 4999, status: 'Delivered', date: '2024-01-13' },
-];
-
-const topProducts = [
-  { id: '1', name: 'Elegant Silk Saree', sales: 45, revenue: 112455, stock: 15 },
-  { id: '2', name: 'Designer Anarkali Suit', sales: 38, revenue: 125362, stock: 8 },
-  { id: '3', name: 'Cotton Dress Material', sales: 52, revenue: 46748, stock: 25 },
-  { id: '4', name: 'Banarasi Silk Saree', sales: 31, revenue: 154969, stock: 5 },
-  { id: '5', name: 'Georgette Sharara Set', sales: 29, revenue: 110171, stock: 12 },
-];
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [selectedPeriod, setSelectedPeriod] = useState('7d');
+  
+  // State for real data
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+  const [salesData, setSalesData] = useState<SalesData[]>([]);
+  const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch all dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setIsLoading(true);
+      try {
+        const [stats, sales, categories, orders, products] = await Promise.all([
+          getDashboardStats(),
+          getSalesData(),
+          getCategoryData(),
+          getRecentOrders(),
+          getTopProducts(),
+        ]);
+
+        setDashboardStats(stats);
+        setSalesData(sales);
+        setCategoryData(categories);
+        setRecentOrders(orders);
+        setTopProducts(products);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [selectedPeriod]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -88,13 +105,34 @@ export default function AdminDashboard() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded animate-pulse"></div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="h-80 bg-gray-200 rounded animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Overview of your store performance</p>
+          <p className="text-gray-600">Live overview of your store performance</p>
         </div>
         <div className="flex items-center space-x-4">
           <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
@@ -123,9 +161,11 @@ export default function AdminDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹5,45,000</div>
+            <div className="text-2xl font-bold">₹{dashboardStats?.totalRevenue.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+12.5%</span> from last month
+              <span className={dashboardStats?.revenueGrowth >= 0 ? "text-green-600" : "text-red-600"}>
+                {dashboardStats?.revenueGrowth >= 0 ? '+' : ''}{dashboardStats?.revenueGrowth.toFixed(1) || '0'}%
+              </span> from last month
             </p>
           </CardContent>
         </Card>
@@ -136,9 +176,11 @@ export default function AdminDashboard() {
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,055</div>
+            <div className="text-2xl font-bold">{dashboardStats?.totalOrders.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+8.2%</span> from last month
+              <span className={dashboardStats?.ordersGrowth >= 0 ? "text-green-600" : "text-red-600"}>
+                {dashboardStats?.ordersGrowth >= 0 ? '+' : ''}{dashboardStats?.ordersGrowth.toFixed(1) || '0'}%
+              </span> from last month
             </p>
           </CardContent>
         </Card>
@@ -149,9 +191,11 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2,847</div>
+            <div className="text-2xl font-bold">{dashboardStats?.totalCustomers.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+15.3%</span> from last month
+              <span className={dashboardStats?.customersGrowth >= 0 ? "text-green-600" : "text-red-600"}>
+                {dashboardStats?.customersGrowth >= 0 ? '+' : ''}{dashboardStats?.customersGrowth.toFixed(1) || '0'}%
+              </span> from last month
             </p>
           </CardContent>
         </Card>
@@ -162,9 +206,11 @@ export default function AdminDashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3.2%</div>
+            <div className="text-2xl font-bold">{dashboardStats?.conversionRate.toFixed(1) || '0'}%</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+0.5%</span> from last month
+              <span className={dashboardStats?.conversionGrowth >= 0 ? "text-green-600" : "text-red-600"}>
+                {dashboardStats?.conversionGrowth >= 0 ? '+' : ''}{dashboardStats?.conversionGrowth.toFixed(1) || '0'}%
+              </span> from last month
             </p>
           </CardContent>
         </Card>

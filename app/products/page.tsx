@@ -16,7 +16,7 @@ import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/products/product-card';
 import { CartSidebar } from '@/components/cart/cart-sidebar';
 import { CATEGORIES } from '@/lib/constants';
-import { getAllProducts } from '@/lib/data';
+import { getAllProducts } from '@/lib/product-data';
 import { Product, ProductCategoryType } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 
@@ -34,7 +34,9 @@ export default function ProductsPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        console.log("Starting to fetch products...");
         const fetchedProducts = await getAllProducts();
+        console.log("Fetched products:", fetchedProducts.length, "products");
         setProducts(fetchedProducts);
       } catch (e: any) {
         console.error("Fetching error:", e);

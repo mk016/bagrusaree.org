@@ -10,11 +10,12 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AdminSidebar } from '@/components/admin/admin-sidebar';
+
 import { ProductForm } from '@/components/admin/product-management/product-form';
 import { getProducts, addProduct, updateProduct, deleteProduct } from '@/lib/product-data';
 import { getCategories } from '@/lib/data';
 import { Product, Category } from '@/lib/types';
+import { formatCurrency } from '@/lib/utils';
 
 export default function AdminProductsPage() {
   const router = useRouter();
@@ -113,12 +114,7 @@ export default function AdminProductsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        <AdminSidebar />
-        
-        {/* Main Content - Responsive without fixed sidebar margin */}
-        <div className="flex-1 w-full">
+    <div className="w-full">
           {/* Header */}
           <div className="bg-white border-b border-gray-200">
             <div className="px-4 sm:px-6 lg:px-8">
@@ -248,7 +244,7 @@ export default function AdminProductsPage() {
                                 )}
                               </span>
                             </TableCell>
-                            <TableCell>₹{product.price.toFixed(2)}</TableCell>
+                            <TableCell>{formatCurrency(product.price)}</TableCell>
                             <TableCell>
                               <Badge variant="outline" className={getStockColor(product.stock)}>
                                 {product.stock}
@@ -287,8 +283,6 @@ export default function AdminProductsPage() {
               </CardContent>
             </Card>
           </div>
-        </div>
-      </div>
     </div>
   );
 }

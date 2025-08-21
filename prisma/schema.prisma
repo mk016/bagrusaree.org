@@ -44,18 +44,29 @@ model Otp {
 
 model Address {
   id          String   @id @default(uuid())
-  customerID  String
-  houseNo     String
-  streetName  String
-  societyName String
-  area        String
-  pincode     Int
+  customerID  String?
+  firstName   String?
+  lastName    String?
+  company     String?
+  address1    String?
+  address2    String?
   city        String
-  district    String
   state       String
+  zipCode     String?
+  country     String   @default("India")
+  phone       String?
+  
+  // Legacy fields for backward compatibility
+  houseNo     String?
+  streetName  String?
+  societyName String?
+  area        String?
+  pincode     Int?
+  district    String?
+  
   createdAt   DateTime @default(now())
 
-  customer   Customer  @relation("CustomerAddresses", fields: [customerID], references: [id])
+  customer   Customer?  @relation("CustomerAddresses", fields: [customerID], references: [id])
   defaultFor Customer? @relation("DefaultAddress")
   
   shippingOrders Order[] @relation("ShippingAddress")
@@ -96,6 +107,7 @@ model Banner {
 model Products {
   id           String   @id @default(uuid())
   name         String
+  handle       String   @unique // SKU/handle for the product
   description  String
   sellingPrice Decimal
   comparePrice Decimal? // Original price before discount (optional)
@@ -104,6 +116,10 @@ model Products {
   subcategory  String?  // New field for subcategory
   tags         String[]
   weight       Int?
+  stock        Int      @default(10) // Stock quantity
+  featured     Boolean  @default(false) // Featured product flag
+  status       String   @default("active") // active, draft, archived
+  sku          String?  // Stock keeping unit
   isAvailable  Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedOn    DateTime @default(now())
@@ -135,20 +151,22 @@ model Order {
   total              Decimal
   subtotal           Decimal
   tax                Decimal
-  shippingCost       Decimal
-  status             String
+  shipping           Decimal    // Renamed from shippingCost for consistency
+  status             String     @default("pending")
   shippingAddressId  String
   billingAddressId   String
   paymentMethod      String
-  paymentStatus      String
+  paymentStatus      String     @default("pending")
   trackingNumber     String?
+  razorpayOrderId    String?    // Store Razorpay order ID
+  razorpayPaymentId  String?    // Store Razorpay payment ID
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
   customer           Customer   @relation(fields: [customerId], references: [id])
   shippingAddress    Address    @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
   billingAddress     Address    @relation("BillingAddress", fields: [billingAddressId], references: [id])
-  orderItems         OrderItem[]
+  items              OrderItem[] // Renamed from orderItems for consistency
 
   @@map("orders")
 }
