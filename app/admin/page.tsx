@@ -161,10 +161,10 @@ export default function AdminDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{dashboardStats?.totalRevenue.toLocaleString() || '0'}</div>
+            <div className="text-2xl font-bold">₹{dashboardStats?.totalRevenue?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              <span className={dashboardStats?.revenueGrowth >= 0 ? "text-green-600" : "text-red-600"}>
-                {dashboardStats?.revenueGrowth >= 0 ? '+' : ''}{dashboardStats?.revenueGrowth.toFixed(1) || '0'}%
+              <span className={(dashboardStats?.revenueGrowth ?? 0) >= 0 ? "text-green-600" : "text-red-600"}>
+                {(dashboardStats?.revenueGrowth ?? 0) >= 0 ? '+' : ''}{(dashboardStats?.revenueGrowth ?? 0).toFixed(1)}%
               </span> from last month
             </p>
           </CardContent>
@@ -176,10 +176,10 @@ export default function AdminDashboard() {
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardStats?.totalOrders.toLocaleString() || '0'}</div>
+            <div className="text-2xl font-bold">{dashboardStats?.totalOrders?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              <span className={dashboardStats?.ordersGrowth >= 0 ? "text-green-600" : "text-red-600"}>
-                {dashboardStats?.ordersGrowth >= 0 ? '+' : ''}{dashboardStats?.ordersGrowth.toFixed(1) || '0'}%
+              <span className={(dashboardStats?.ordersGrowth ?? 0) >= 0 ? "text-green-600" : "text-red-600"}>
+                {(dashboardStats?.ordersGrowth ?? 0) >= 0 ? '+' : ''}{(dashboardStats?.ordersGrowth ?? 0).toFixed(1)}%
               </span> from last month
             </p>
           </CardContent>
@@ -191,10 +191,10 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardStats?.totalCustomers.toLocaleString() || '0'}</div>
+            <div className="text-2xl font-bold">{dashboardStats?.totalCustomers?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              <span className={dashboardStats?.customersGrowth >= 0 ? "text-green-600" : "text-red-600"}>
-                {dashboardStats?.customersGrowth >= 0 ? '+' : ''}{dashboardStats?.customersGrowth.toFixed(1) || '0'}%
+              <span className={(dashboardStats?.customersGrowth ?? 0) >= 0 ? "text-green-600" : "text-red-600"}>
+                {(dashboardStats?.customersGrowth ?? 0) >= 0 ? '+' : ''}{(dashboardStats?.customersGrowth ?? 0).toFixed(1)}%
               </span> from last month
             </p>
           </CardContent>
@@ -206,10 +206,10 @@ export default function AdminDashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardStats?.conversionRate.toFixed(1) || '0'}%</div>
+            <div className="text-2xl font-bold">{(dashboardStats?.conversionRate ?? 0).toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">
-              <span className={dashboardStats?.conversionGrowth >= 0 ? "text-green-600" : "text-red-600"}>
-                {dashboardStats?.conversionGrowth >= 0 ? '+' : ''}{dashboardStats?.conversionGrowth.toFixed(1) || '0'}%
+              <span className={(dashboardStats?.conversionGrowth ?? 0) >= 0 ? "text-green-600" : "text-red-600"}>
+                {(dashboardStats?.conversionGrowth ?? 0) >= 0 ? '+' : ''}{(dashboardStats?.conversionGrowth ?? 0).toFixed(1)}%
               </span> from last month
             </p>
           </CardContent>

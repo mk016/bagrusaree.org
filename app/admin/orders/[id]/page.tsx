@@ -56,7 +56,7 @@ export default function OrderDetailPage() {
     }
   }, [orderId]);
 
-  const updateOrderStatus = async (newStatus: string) => {
+  const updateOrderStatus = async (newStatus: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled') => {
     if (!order) return;
 
     setIsUpdatingStatus(true);
@@ -201,9 +201,9 @@ export default function OrderDetailPage() {
                         <TableRow key={index}>
                           <TableCell>
                             <div className="flex items-center space-x-3">
-                              {product?.image && (
+                              {product?.images?.[0] && (
                                 <img
-                                  src={product.image}
+                                  src={product.images[0]}
                                   alt={product.name}
                                   className="w-12 h-12 object-cover rounded"
                                 />
@@ -269,10 +269,10 @@ export default function OrderDetailPage() {
                   <div className="space-y-1 text-sm text-gray-600">
                     <div className="flex items-center space-x-2">
                       <MapPin className="h-4 w-4" />
-                      <span>{order.shippingAddress?.address || 'No address provided'}</span>
+                      <span>{order.shippingAddress?.address1 || 'No address provided'}</span>
                     </div>
                     <div className="pl-6">
-                      {order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.pincode}
+                      {order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zipCode}
                     </div>
                     <div className="pl-6">{order.shippingAddress?.country || 'India'}</div>
                   </div>
@@ -355,12 +355,7 @@ export default function OrderDetailPage() {
                     <span>{order.customer.email}</span>
                   </div>
                 )}
-                {order.customer?.phone && (
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Phone className="h-4 w-4" />
-                    <span>{order.customer.phone}</span>
-                  </div>
-                )}
+
               </div>
               <Separator />
               <div className="text-sm">
@@ -397,12 +392,7 @@ export default function OrderDetailPage() {
                   {order.paymentStatus || 'Pending'}
                 </Badge>
               </div>
-              {order.paymentId && (
-                <div className="flex justify-between">
-                  <span>Payment ID:</span>
-                  <span className="font-mono text-sm">{order.paymentId}</span>
-                </div>
-              )}
+
               <div className="flex justify-between">
                 <span>Amount:</span>
                 <span className="font-medium">{formatCurrency(order.total)}</span>
