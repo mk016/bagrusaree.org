@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCartStore } from '@/lib/store';
-import { RazorpayPayment } from '@/components/payment/razorpay-payment';
+// import { RazorpayPayment } from '@/components/payment/razorpay-payment';
 import { PaymentFormData } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 
@@ -42,7 +42,7 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
     city: '',
     state: '',
     zipCode: '',
-    paymentMethod: 'razorpay',
+    paymentMethod: 'cod',
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -185,50 +185,26 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
     e.preventDefault();
     
     if (!validateForm()) {
+      toast({
+        title: "Form Incomplete",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
       return;
     }
 
-    setIsProcessing(true);
+    // Generate order summary and send to WhatsApp
+    const orderDetails = generateOrderSummary();
+    sendToWhatsApp(orderDetails);
     
-    try {
-      // Generate order summary
-      const orderDetails = generateOrderSummary();
-      
-      // Send order to backend API for COD
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderDetails),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to place order via API');
-      }
-
-      const result = await response.json();
-      console.log('COD Order successfully placed in database:', result);
-
-      // Send to WhatsApp
-      sendToWhatsApp(orderDetails);
-      
-      // Clear cart after successful order
-      clearCart();
-      
-      // Redirect to success page
-      router.push('/checkout/success');
-    } catch (error) {
-      console.error('Error processing COD order:', error);
-      toast({
-        title: "Order Failed",
-        description: error instanceof Error ? error.message : 'Failed to place order',
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
+    // Clear cart after sending to WhatsApp
+    clearCart();
+    
+    toast({
+      title: "Order Sent to WhatsApp",
+      description: "Please complete your order on WhatsApp.",
+      variant: "default",
+    });
   };
 
   return (
@@ -381,24 +357,24 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
             <CardDescription>Choose your preferred payment method</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <RadioGroup 
+                        <RadioGroup
               value={formData.paymentMethod} 
               onValueChange={(value) => handleInputChange('paymentMethod', value as 'razorpay' | 'cod')}
             >
-              <div className="flex items-center space-x-2">
+              {/* <div className="flex items-center space-x-2">
                 <RadioGroupItem value="razorpay" id="razorpay" />
                 <Label htmlFor="razorpay" className="flex items-center">
                   <CreditCard className="h-4 w-4 mr-2" />
                   Online Payment (Cards, UPI, Net Banking)
                 </Label>
-              </div>
+              </div> */}
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="cod" id="cod" />
                 <Label htmlFor="cod">Cash on Delivery</Label>
               </div>
             </RadioGroup>
 
-            {formData.paymentMethod === 'razorpay' && (
+            {/* {formData.paymentMethod === 'razorpay' && (
               <div className="pt-4 border-t">
                 <p className="text-sm text-gray-600 mb-2">
                   Pay securely with Credit/Debit Cards, UPI, Net Banking, or Digital Wallets.
@@ -408,7 +384,7 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
                   Secure payment powered by Razorpay
                 </div>
               </div>
-            )}
+            )} */}
 
             {formData.paymentMethod === 'cod' && (
               <div className="pt-4 border-t">
@@ -420,31 +396,53 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
           </CardContent>
         </Card>
 
-        {/* Submit Button for COD */}
+        {/* Submit Button for COD - Now redirects to WhatsApp */}
         {formData.paymentMethod === 'cod' && (
           <Button 
-            type="submit" 
+            type="button" 
             className="w-full" 
             size="lg"
-            disabled={isProcessing}
+            disabled={isProcessing || !isFormValid}
+            onClick={() => {
+              if (!validateForm()) {
+                toast({
+                  title: "Form Incomplete",
+                  description: "Please fill in all required fields.",
+                  variant: "destructive",
+                });
+                return;
+              }
+              
+              const orderDetails = generateOrderSummary();
+              sendToWhatsApp(orderDetails);
+              
+              // Clear cart after sending to WhatsApp
+              clearCart();
+              
+              toast({
+                title: "Order Sent to WhatsApp",
+                description: "Please complete your order on WhatsApp.",
+                variant: "default",
+              });
+            }}
           >
             {isProcessing ? (
               <div className="flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Processing Order...
+                Processing...
               </div>
             ) : (
               <>
                 <MessageCircle className="h-5 w-5 mr-2" />
-                Complete Order (COD) - ₹{total.toLocaleString()}
+                Complete Order on WhatsApp - ₹{total.toLocaleString()}
               </>
             )}
           </Button>
         )}
       </form>
 
-      {/* Razorpay Payment Component */}
-      {formData.paymentMethod === 'razorpay' && isFormValid && (
+      {/* Razorpay Payment Component - Commented out for WhatsApp redirect */}
+      {/* {formData.paymentMethod === 'razorpay' && isFormValid && (
         <RazorpayPayment
           orderData={{
             customer: formData,
@@ -471,14 +469,14 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
         />
       )}
 
-      {/* Form validation message for Razorpay */}
+      Form validation message for Razorpay
       {formData.paymentMethod === 'razorpay' && !isFormValid && (
         <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
           <p className="text-yellow-800 text-sm">
             Please fill in all required fields above to continue with payment.
           </p>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
