@@ -31,12 +31,9 @@ export async function POST(req: NextRequest) {
     // Proper authentication should be enforced in production
     const actualUserId = "temp-user-debug-" + Date.now();
     
-    /* if (!userId) {
+    /* // if (!userId) {
       console.log("No user ID found - unauthorized request");
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      // return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     } */
     
     const data = await req.json();
@@ -86,11 +83,8 @@ export async function DELETE(req: NextRequest) {
   try {
     // TODO: Fix authentication setup - currently bypassing for functionality
     // Temporarily bypass auth for debugging
-    /* if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    /* // if (!userId) {
+      // return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     } */
     
     await prisma.banner.deleteMany({});

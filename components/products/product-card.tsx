@@ -33,8 +33,11 @@ function ProductCard({ product, className }: ProductCardProps) {
     e.stopPropagation();
     addToCart({
       productId: product.id,
-      product,
+      name: product.name,
+      price: product.price,
+      image: product.images[0] || '',
       quantity: 1,
+      sku: product.sku,
     });
   };
 
@@ -43,8 +46,11 @@ function ProductCard({ product, className }: ProductCardProps) {
     e.stopPropagation();
     addToCart({
       productId: product.id,
-      product,
+      name: product.name,
+      price: product.price,
+      image: product.images[0] || '',
       quantity: 1,
+      sku: product.sku,
     });
     router.push('/checkout');
   };
@@ -56,9 +62,11 @@ function ProductCard({ product, className }: ProductCardProps) {
       removeFromWishlist(product.id);
     } else {
       addToWishlist({
-        userId: '1',
         productId: product.id,
-        product,
+        name: product.name,
+        price: product.price,
+        image: product.images[0] || '',
+        sku: product.sku,
       });
     }
   };

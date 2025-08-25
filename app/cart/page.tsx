@@ -90,8 +90,8 @@ export default function CartPage() {
                     <div key={item.id} className="flex space-x-4 pb-6 border-b last:border-b-0">
                       <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                         <img
-                          src={item.product.images[0]}
-                          alt={item.product.name}
+                          src={item.image}
+                          alt={item.name}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -100,21 +100,21 @@ export default function CartPage() {
                         <div>
                           <h3 className="font-medium text-lg leading-tight">
                             <Link 
-                              href={`/products/${item.product.id}`}
+                              href={`/products/${item.productId}`}
                               className="hover:text-indigo-600 transition-colors"
                             >
-                              {item.product.name}
+                              {item.name}
                             </Link>
                           </h3>
                           <p className="text-sm text-gray-600 line-clamp-2">
-                            {item.product.description}
+                            {item.name}
                           </p>
                         </div>
                         
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
                           {item.size && <span>Size: {item.size}</span>}
                           {item.color && <span>Color: {item.color}</span>}
-                          <span>SKU: {item.product.sku}</span>
+                          {item.sku && <span>SKU: {item.sku}</span>}
                         </div>
 
                         <div className="flex items-center justify-between">
@@ -142,13 +142,8 @@ export default function CartPage() {
                           
                           <div className="text-right">
                             <div className="font-semibold text-lg">
-                              ₹{(item.product.price * item.quantity).toLocaleString()}
+                              ₹{(item.price * item.quantity).toLocaleString()}
                             </div>
-                            {item.product.comparePrice && (
-                              <div className="text-sm text-gray-500 line-through">
-                                ₹{(item.product.comparePrice * item.quantity).toLocaleString()}
-                              </div>
-                            )}
                           </div>
                         </div>
                         

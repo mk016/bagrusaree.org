@@ -18,8 +18,11 @@ export default function WishlistPage() {
   const handleAddToCart = (item: any) => {
     addToCart({
       productId: item.productId,
-      product: item.product,
+      name: item.name,
+      price: item.price,
+      image: item.image,
       quantity: 1,
+      sku: item.sku,
     });
   };
 
@@ -88,24 +91,12 @@ export default function WishlistPage() {
                 <Link href={`/products/${item.productId}`}>
                   <div className="aspect-[3/4] relative overflow-hidden">
                     <img
-                      src={item.product.images[0]}
-                      alt={item.product.name}
+                      src={item.image}
+                      alt={item.name}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                     
-                    {/* Badges */}
-                    <div className="absolute top-2 left-2 flex flex-col space-y-1">
-                      {item.product.featured && (
-                        <Badge variant="secondary" className="text-xs">
-                          Featured
-                        </Badge>
-                      )}
-                      {item.product.comparePrice && (
-                        <Badge variant="destructive" className="text-xs">
-                          -{Math.round(((item.product.comparePrice - item.product.price) / item.product.comparePrice) * 100)}% OFF
-                        </Badge>
-                      )}
-                    </div>
+                    {/* Badges - Commented out as product details not available in WishlistItem */}
 
                     {/* Remove from Wishlist */}
                     <Button
@@ -126,51 +117,36 @@ export default function WishlistPage() {
                   <div className="space-y-3">
                     <Link href={`/products/${item.productId}`}>
                       <h3 className="font-medium leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors">
-                        {item.product.name}
+                        {item.name}
                       </h3>
                     </Link>
 
                     <div className="flex items-center space-x-2">
                       <span className="font-semibold text-lg">
-                        ₹{item.product.price.toLocaleString()}
+                        ₹{item.price.toLocaleString()}
                       </span>
-                      {item.product.comparePrice && (
-                        <span className="text-sm text-gray-500 line-through">
-                          ₹{item.product.comparePrice.toLocaleString()}
-                        </span>
-                      )}
                     </div>
 
-                    {item.product.stock === 0 ? (
-                      <Button disabled className="w-full" size="sm">
-                        Out of Stock
+                    <div className="flex space-x-2">
+                      <Button
+                        className="flex-1"
+                        size="sm"
+                        onClick={() => handleAddToCart(item)}
+                      >
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        Add to Cart
                       </Button>
-                    ) : (
-                      <div className="flex space-x-2">
-                        <Button
-                          className="flex-1"
-                          size="sm"
-                          onClick={() => handleAddToCart(item)}
-                        >
-                          <ShoppingCart className="h-4 w-4 mr-2" />
-                          Add to Cart
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="px-3"
-                          onClick={() => handleRemoveFromWishlist(item.productId)}
-                        >
-                          <Heart className="h-4 w-4 fill-red-500 text-red-500" />
-                        </Button>
-                      </div>
-                    )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="px-3"
+                        onClick={() => handleRemoveFromWishlist(item.productId)}
+                      >
+                        <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                      </Button>
+                    </div>
 
-                    {item.product.stock > 0 && item.product.stock < 10 && (
-                      <p className="text-xs text-orange-600">
-                        Only {item.product.stock} left in stock!
-                      </p>
-                    )}
+                    {/* Stock info not available in WishlistItem */}
                   </div>
                 </CardContent>
               </Card>

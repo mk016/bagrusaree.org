@@ -32,10 +32,13 @@ export function BuyNowButton({
     // Add to cart
     addItem({
       productId: product.id,
-      product,
+      name: product.name,
+      price: product.price,
+      image: product.images[0] || '',
       quantity,
       size,
       color,
+      sku: product.sku,
     });
     
     // Redirect to checkout
