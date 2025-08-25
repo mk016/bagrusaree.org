@@ -495,30 +495,12 @@ Please confirm availability and proceed with the order. Thank you!`;
                   WhatsApp
                 </Button>
 
-                <Button
+                <BuyNowButton
+                  product={product}
+                  quantity={quantity}
                   className="bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                  size="lg"
-                  onClick={() => {
-                    try {
-                      // Add to cart first
-                      handleAddToCart();
-                      
-                      // Small delay then redirect to checkout
-                      setTimeout(() => {
-                        router.push('/checkout');
-                      }, 500);
-                      
-                      toast.success('Redirecting to checkout...');
-                    } catch (error) {
-                      console.error('Error proceeding to checkout:', error);
-                      toast.error('Error proceeding to checkout. Please try again.');
-                    }
-                  }}
                   disabled={product.stock === 0}
-                >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  BUY NOW
-                </Button>
+                />
               </div>
               
 
