@@ -32,9 +32,8 @@ export default function CheckoutPage() {
   const [couponDiscount, setCouponDiscount] = useState(0);
 
   const subtotal = getTotalPrice();
-  const shipping = subtotal > 999 ? 0 : 99;
-  const tax = Math.round(subtotal * 0.18); // 18% GST
-  const total = subtotal + shipping + tax - couponDiscount;
+  const shipping = 0; // Free delivery for all orders
+  const total = subtotal + shipping - couponDiscount;
 
   // Coupon functions
   const applyCoupon = () => {
@@ -227,11 +226,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Shipping</span>
-                    <span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Tax (GST 18%)</span>
-                    <span>₹{tax.toLocaleString()}</span>
+                    <span>🚚 FREE DELIVERY</span>
                   </div>
                   {couponDiscount > 0 && (
                     <div className="flex justify-between text-sm text-green-600">
@@ -246,13 +241,11 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {shipping > 0 && (
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <p className="text-sm text-blue-700">
-                      Add ₹{(999 - subtotal).toLocaleString()} more to get free shipping!
-                    </p>
-                  </div>
-                )}
+                <div className="bg-green-50 p-3 rounded-lg">
+                  <p className="text-sm text-green-700">
+                    🎉 Free delivery on all orders!
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>

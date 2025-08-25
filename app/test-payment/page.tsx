@@ -38,7 +38,7 @@ export default function TestPaymentPage() {
     pricing: {
       subtotal: 999,
       shipping: 0,
-      tax: 180, // 18% GST
+      tax: 0, // No tax
       total: 1179,
     },
   };
@@ -86,7 +86,7 @@ export default function TestPaymentPage() {
                 <div className="text-sm text-blue-700 space-y-1">
                   <p><strong>Product:</strong> Test Saree - ₹999</p>
                   <p><strong>Shipping:</strong> Free</p>
-                  <p><strong>Tax:</strong> ₹180 (18% GST)</p>
+                  <p><strong>Tax:</strong> ₹0 (No tax)</p>
                   <p><strong>Total:</strong> ₹1,179</p>
                 </div>
               </div>
