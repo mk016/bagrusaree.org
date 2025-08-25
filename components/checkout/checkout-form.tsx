@@ -50,9 +50,8 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
   const [isFormValid, setIsFormValid] = useState(false);
 
   const subtotal = getTotalPrice();
-  const shipping = subtotal > 999 ? 0 : 99;
-  const tax = Math.round(subtotal * 0.18); // 18% GST
-  const total = subtotal + shipping + tax;
+  const shipping = 0; // Free delivery for all orders
+  const total = subtotal + shipping;
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -116,7 +115,6 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
       pricing: {
         subtotal,
         shipping,
-        tax,
         total
       },
       paymentMethod: formData.paymentMethod
@@ -147,8 +145,7 @@ export function CheckoutForm({ onBack }: CheckoutFormProps) {
     
     message += `💰 *Order Summary:*\n`;
     message += `Subtotal: ₹${orderDetails.pricing.subtotal.toLocaleString()}\n`;
-    message += `Shipping: ${orderDetails.pricing.shipping === 0 ? 'Free' : '₹' + orderDetails.pricing.shipping.toLocaleString()}\n`;
-    message += `Tax (GST 18%): ₹${orderDetails.pricing.tax.toLocaleString()}\n`;
+    message += `Shipping: 🚚 FREE DELIVERY\n`;
     message += `*Total: ₹${orderDetails.pricing.total.toLocaleString()}*\n\n`;
     
     message += `💳 *Payment Method:* ${orderDetails.paymentMethod.toUpperCase()}\n`;

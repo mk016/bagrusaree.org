@@ -22,9 +22,8 @@ export default function CartPage() {
   } = useCartStore();
 
   const totalPrice = getTotalPrice();
-  const shipping = totalPrice > 999 ? 0 : 99;
-  const tax = Math.round(totalPrice * 0.18); // 18% GST
-  const finalTotal = totalPrice + shipping + tax;
+  const shipping = 0; // Free delivery for all orders
+  const finalTotal = totalPrice + shipping;
 
   if (items.length === 0) {
     return (
@@ -180,11 +179,7 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
-                    <span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tax (GST 18%)</span>
-                    <span>₹{tax.toLocaleString()}</span>
+                    <span>🚚 FREE DELIVERY</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-semibold text-lg">
@@ -193,13 +188,11 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {shipping > 0 && (
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <p className="text-sm text-blue-700">
-                      Add ₹{(999 - totalPrice).toLocaleString()} more to get free shipping!
-                    </p>
-                  </div>
-                )}
+                <div className="bg-green-50 p-3 rounded-lg">
+                  <p className="text-sm text-green-700">
+                    🎉 Free delivery on all orders!
+                  </p>
+                </div>
 
                 <div className="space-y-3">
                   <Button asChild className="w-full" size="lg">
