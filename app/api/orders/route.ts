@@ -107,14 +107,14 @@ export async function POST(request: Request) {
         total: Number(total),
         subtotal: Number(subtotal),
         tax: Number(tax),
-        shippingCost: Number(shipping),
+        shipping: Number(shipping),
         status: 'pending', // Initial status
         shippingAddressId: newAddress.id,
         billingAddressId: newAddress.id, // Assuming same for now
         paymentMethod: paymentMethod,
         paymentStatus: 'pending',
         trackingNumber: null,
-        orderItems: {
+        items: {
           create: items.map((item: any) => ({
             productId: item.productId, // Now we have the productId from the checkout form
             quantity: item.quantity,

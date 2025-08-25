@@ -82,6 +82,8 @@ export const useAuthStore = create<AuthStore>()(
             name: name || 'Demo User',
             role: 'user',
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           };
           set({ user, isAuthenticated: true });
           return true;
@@ -95,6 +97,8 @@ export const useAuthStore = create<AuthStore>()(
             name: name || email.split('@')[0],
             role: 'user',
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           };
           set({ user, isAuthenticated: true });
           return true;
@@ -183,7 +187,7 @@ export const useWishlistStore = create<WishlistStore>()(
               ...newItem, 
               id: Math.random().toString(36),
               createdAt: new Date().toISOString()
-            }],
+            } as WishlistItem],
           });
         }
       },
